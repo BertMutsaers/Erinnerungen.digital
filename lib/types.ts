@@ -1,5 +1,5 @@
 export type CardSize  = 'small' | 'medium' | 'large' | 'lg-black'
-export type CardColor = 'schwarz' | 'gold' | 'rose' | 'weiss'
+export type CardColor = 'schwarz' | 'gold' | 'rose' | 'blau' | 'weiss'
 
 export interface Memory {
   id: string
@@ -11,10 +11,12 @@ export interface Memory {
   datumMonat?: number
   datumTag?: number
   location?: string
-  cardSize:  CardSize
-  cardColor: CardColor
+  cardSize:    CardSize
+  cardColor?:  CardColor   // optional: if set in DB, used directly; else computed by planGridLayout
+  pinnedSize?:     CardSize  // raw DB card_size value
+  groesseManuell?: boolean  // true = user set this size intentionally in EditSheet
+  bodyExtra?:      string   // KI-generated zeitgeschehen context
   imageUrl?: string
   icon?: string
   kategorie?: string
 }
-

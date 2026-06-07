@@ -28,43 +28,74 @@ export function resolveCardColor(title = '', body = ''): CardColor {
 }
 
 /**
- * Plans card sizes AND colors for the full grid.
- * card_size and card_color stored in DB are ignored — always recomputed.
+ * Two-pass layout algorithm.
  *
- * Size cycle for non-highlights: sm · sm · md · repeat
- * lg-black always starts at a row boundary (promote prev sm → md if needed).
- * Trailing lone sm → promoted to md.
+ * Pass 1 — assign a "desired" size to each card:
+ *   • keyword highlight OR pinnedSize='lg-black' → lg-black
+ *   • pinnedSize='large'                         → large
+ *   • pinnedSize='medium'                        → medium
+ *   • everything else (sm or unset)              → small (subject to pass 2)
+ *
+ * Pass 2 — enforce the pairing rule for small cards:
+ *   • Two adjacent smalls → place side by side (col-span-1 each)
+ *   • Lone small (no sm neighbour)  → upgrade to medium (col-span-2)
+ *
+ * Card color: DB value wins if set; otherwise computed from keywords.
+ * DB sizes are never written back — layout is display-only.
  */
 export function planGridLayout(memories: Memory[]): Memory[] {
-  const result: Array<Memory & { cardSize: CardSize; cardColor: CardColor }> = []
-  let cyclePos: 0 | 1 | 2 = 0
+  // ── Pass 1: desired sizes ─────────────────────────────────────────────────
+  const sized = memories.map((mem): Memory & { cardSize: CardSize; cardColor: CardColor } => {
+    const cardColor: CardColor = mem.cardColor ?? resolveCardColor(mem.title, mem.body)
 
-  for (const mem of memories) {
-    const cardColor = resolveCardColor(mem.title, mem.body)
-
+    // Keywords always win — even manual overrides can't suppress death/birth highlights
     if (isHighlight(mem)) {
-      if (cyclePos === 1) {
-        result[result.length - 1] = { ...result[result.length - 1], cardSize: 'medium' }
-        cyclePos = 0
-      }
-      result.push({ ...mem, cardSize: 'lg-black', cardColor })
-      cyclePos = 0
-    } else {
-      if (cyclePos === 0) {
-        result.push({ ...mem, cardSize: 'small', cardColor })
-        cyclePos = 1
-      } else if (cyclePos === 1) {
-        result.push({ ...mem, cardSize: 'small', cardColor })
-        cyclePos = 2
-      } else {
-        result.push({ ...mem, cardSize: 'medium', cardColor })
-        cyclePos = 0
-      }
+      return { ...mem, cardSize: 'lg-black', cardColor }
     }
-  }
 
-  if (cyclePos === 1 && result.length > 0) {
-    result[result.length - 1] = { ...result[result.length - 1], cardSize: 'medium' }
+    // Manual size: user explicitly chose this in EditSheet → use it directly
+    if (mem.groesseManuell && mem.pinnedSize) {
+      return { ...mem, cardSize: mem.pinnedSize, cardColor }
+      // Note: 'small' from here still goes through Pass 2 pairing rule
+    }
+
+    // Automatic: use DB value as hint (seed data, KI suggestions)
+    if (mem.pinnedSize === 'lg-black') return { ...mem, cardSize: 'lg-black', cardColor }
+    if (mem.pinnedSize === 'large')   return { ...mem, cardSize: 'large',    cardColor }
+    if (mem.pinnedSize === 'medium')  return { ...mem, cardSize: 'medium',   cardColor }
+
+    // Unset or small → let Pass 2 decide (pair or upgrade)
+    return { ...mem, cardSize: 'small', cardColor }
+  })
+
+  // ── Pass 2: pair smalls or upgrade lone ones ──────────────────────────────
+  const result: Array<Memory & { cardSize: CardSize; cardColor: CardColor }> = []
+  let i = 0
+
+  while (i < sized.length) {
+    const card = sized[i]
+
+    if (card.cardSize === 'small') {
+      const next = sized[i + 1]
+      if (next?.cardSize === 'small') {
+        // Pair: both go side by side
+        result.push(card)
+        result.push(next)
+        i += 2
+      } else if (card.groesseManuell) {
+        // User explicitly chose sm → respect it even if lone (half-row with empty right cell)
+        result.push(card)
+        i += 1
+      } else {
+        // Automatic lone small → upgrade to medium
+        result.push({ ...card, cardSize: 'medium' })
+        i += 1
+      }
+    } else {
+      // medium / large / lg-black: always full row, no pairing needed
+      result.push(card)
+      i += 1
+    }
   }
 
   return result

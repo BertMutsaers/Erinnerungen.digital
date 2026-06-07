@@ -29,7 +29,7 @@ export function useMemories(bookId: string, filter = 'alle'): UseMemoriesResult 
       .select(`
         id, title, body, happened_at,
         datum_label, datum_jahr, datum_monat, datum_tag,
-        location, icon, kategorie
+        location, card_size, card_color, groesse_manuell, foto_url, icon, kategorie, body_extra
       `)
       .eq('book_id', bookId)
       .order('datum_jahr',  { ascending: true })
@@ -48,8 +48,12 @@ export function useMemories(bookId: string, filter = 'alle'): UseMemoriesResult 
           datumMonat: r.datum_monat ?? undefined,
           datumTag:   r.datum_tag   ?? undefined,
           location:   r.location   ?? undefined,
-          cardSize:   'medium', // overridden by planGridLayout in groupByPhase
-          cardColor:  'weiss',  // overridden by planGridLayout in groupByPhase
+          cardSize:   (r.card_size  as import('@/lib/types').CardSize)  ?? 'medium',
+          cardColor:  (r.card_color as import('@/lib/types').CardColor) ?? undefined,
+          pinnedSize:     r.card_size ? (r.card_size as import('@/lib/types').CardSize) : undefined,
+          groesseManuell: r.groesse_manuell ?? false,
+          imageUrl:       r.foto_url    ?? undefined,
+          bodyExtra:      r.body_extra  ?? undefined,
           icon:       r.icon       ?? undefined,
           kategorie:  r.kategorie  ?? undefined,
         }))
