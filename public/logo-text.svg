@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 328 91" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;">
+    <g transform="matrix(1,0,0,1,-102,-18)">
+        <path d="M96,7L96,113C96,114.656 94.656,116 93,116L7,116C5.344,116 4,114.656 4,113L4,7C4,5.344 5.344,4 7,4L93,4C94.656,4 96,5.344 96,7Z" style="fill:white;stroke:black;stroke-width:4px;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,10,44)">
+        <g>
+            <text x="0px" y="0px" style="font-family:'Georgia', serif;font-size:52px;">e</text>
+            <g transform="matrix(1,0,0,1,24.877,0)">
+                <text x="0px" y="0px" style="font-family:'Georgia', serif;font-size:52px;">r<tspan x="21.042px 36.017px 66.479px 96.942px 121.819px 142.862px 172.512px 202.974px 229.197px 254.074px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">innerungen</tspan></text>
+            </g>
+        </g>
+    </g>
+    <g transform="matrix(1,0,0,1,12,78)">
+        <g>
+            <text x="0px" y="0px" style="font-family:'Georgia', serif;font-size:34px;">.</text>
+            <g transform="matrix(1,0,0,1,9.062,0)">
+                <text x="0px" y="0px" style="font-family:'Georgia', serif;font-size:34px;">d<tspan x="19.421px 29.28px 46.494px 56.353px 67.988px 85.019px " y="0px 0px 0px 0px 0px 0px ">igital</tspan></text>
+            </g>
+        </g>
+    </g>
+</svg>

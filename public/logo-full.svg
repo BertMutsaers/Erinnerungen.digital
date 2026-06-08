@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 480 120" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;">
+    <path d="M96,7L96,113C96,114.656 94.656,116 93,116L7,116C5.344,116 4,114.656 4,113L4,7C4,5.344 5.344,4 7,4L93,4C94.656,4 96,5.344 96,7Z" style="fill:white;stroke:black;stroke-width:4px;"/>
+    <path d="M87,14L87,86C87,86.552 86.552,87 86,87L14,87C13.448,87 13,86.552 13,86L13,14C13,13.448 13.448,13 14,13L86,13C86.552,13 87,13.448 87,14Z" style="fill:white;stroke:black;stroke-width:3.5px;"/>
+    <g transform="matrix(1,0,0,1,0,-2)">
+        <ellipse cx="50" cy="38" rx="16" ry="17"/>
+    </g>
+    <g transform="matrix(1,0,0,1,0,-2)">
+        <path d="M18,90C18,71.333 28.667,62 50,62C71.333,62 82,71.333 82,90L18,90Z" style="fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,112,62)">
+        <text x="0px" y="0px" style="font-family:'Georgia', serif;font-size:52px;">e<tspan x="24.877px 45.919px 60.894px 91.356px 121.819px 146.696px 167.739px 197.389px 227.851px 254.074px 278.951px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">rinnerungen</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,114,96)">
+        <text x="0px" y="0px" style="font-family:'Georgia', serif;font-size:34px;">.<tspan x="9.062px 28.483px 38.342px 55.556px 65.415px 77.05px 94.081px " y="0px 0px 0px 0px 0px 0px 0px ">digital</tspan></text>
+    </g>
+</svg>

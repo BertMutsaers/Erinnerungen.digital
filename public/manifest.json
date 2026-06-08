@@ -1,0 +1,17 @@
+{
+  "name": "erinnerungen.digital",
+  "short_name": "Erinnerungen",
+  "description": "Du erinnerst dich. Wir bewahren es.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F2F2F7",
+  "theme_color": "#FFFFFF",
+  "icons": [
+    {
+      "src": "/logo-symbol.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

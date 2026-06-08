@@ -16,9 +16,12 @@ import ScrollIndicator from './ScrollIndicator'
 import NavSpacer from './NavSpacer'
 import PolaroidIntro from './PolaroidIntro'
 
-const BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
+const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
-export default function TimelineScreen() {
+interface Props { bookId?: string; basePath?: string; readOnly?: boolean }
+
+export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', readOnly = false }: Props) {
+  const BOOK_ID = bookId
   const router = useRouter()
   const [filter, setFilter]   = useState('alle')
   const [editing, setEditing] = useState<Memory | null>(null)
@@ -92,7 +95,7 @@ export default function TimelineScreen() {
                     key={mem.id}
                     memory={mem}
                     onClick={(m) => router.push(`/memories/${m.id}`)}
-                    onLongPress={setEditing}
+                    onLongPress={readOnly ? () => {} : setEditing}
                   />
                 ))}
               </div>
@@ -114,30 +117,35 @@ export default function TimelineScreen() {
         </div>
       )}
 
-      {/* Floating ⊕ button */}
-      <button
-        onClick={() => setNewMemoryOpen(true)}
-        className="fixed z-30 flex items-center justify-center rounded-full bg-gray-900 text-white active:opacity-80"
-        style={{ bottom: 90, right: 20, width: 48, height: 48, fontSize: 24, lineHeight: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
-        aria-label="Neue Erinnerung"
-      >
-        ⊕
-      </button>
+      {/* Floating ⊕ button — hidden in readOnly mode */}
+      {!readOnly && (
+        <button
+          onClick={() => setNewMemoryOpen(true)}
+          className="fixed z-30 flex items-center justify-center rounded-full bg-gray-900 text-white active:opacity-80"
+          style={{ bottom: 90, right: 20, width: 48, height: 48, fontSize: 24, lineHeight: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
+          aria-label="Neue Erinnerung"
+        >
+          ⊕
+        </button>
+      )}
 
       <ScrollIndicator phases={phases.map((p) => ({ key: p.key, label: p.label }))} />
 
-      <NewMemorySheet
-        open={newMemoryOpen}
-        onClose={() => setNewMemoryOpen(false)}
-        onSaved={() => { reload(); showToast('✓ Gespeichert') }}
-      />
-
-      <EditSheet
-        memory={editing}
-        onClose={() => setEditing(null)}
-        onSaved={() => { reload(); showToast('✓ Gespeichert') }}
-        onDeleted={() => { reload(); showToast('Erinnerung gelöscht') }}
-      />
+      {!readOnly && (
+        <>
+          <NewMemorySheet
+            open={newMemoryOpen}
+            onClose={() => setNewMemoryOpen(false)}
+            onSaved={() => { reload(); showToast('✓ Gespeichert') }}
+          />
+          <EditSheet
+            memory={editing}
+            onClose={() => setEditing(null)}
+            onSaved={() => { reload(); showToast('✓ Gespeichert') }}
+            onDeleted={() => { reload(); showToast('Erinnerung gelöscht') }}
+          />
+        </>
+      )}
 
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[70]
@@ -148,7 +156,7 @@ export default function TimelineScreen() {
       )}
 
       <NavSpacer />
-      <BottomNav />
+      <BottomNav basePath={basePath} />
     </main>
   )
 }
