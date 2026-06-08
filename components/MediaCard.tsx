@@ -13,7 +13,7 @@ interface Props {
 }
 
 // ── Shared card shell ─────────────────────────────────────────────────────
-const RADIUS = 18
+import { CARD_RADIUS as RADIUS } from '@/lib/constants'
 
 function CardShell({
   item, pressing, handlers, children, isWide,
@@ -156,20 +156,25 @@ export default function MediaCard({ item, onLongPress, onPlayVideo, onViewPhoto 
     return <AudioCard item={item} handlers={handlers} pressing={pressing} />
   }
 
-  const isWide = item.groesse === 'wide'
-  const isTall = item.groesse === 'tall'
-  // tall: col-span-1, row-span-2 — keep as-is for photos
-  const colSpan    = isWide || isTall ? (isWide ? 'col-span-2' : 'col-span-1') : 'col-span-1'
-  const rowSpan    = isTall ? 'row-span-2' : 'row-span-1'
-  const aspectRatio = isTall ? '1 / 2' : isWide ? '16 / 9' : '1 / 1'
+  // Fixed sizes per type — only foto respects DB groesse
+  const effectiveGroesse =
+    item.typ === 'foto'     ? item.groesse :
+    item.typ === 'dokument' ? 'normal' :   // PDF → sm
+    'wide'                                  // video, audio → md
+
+  const isWide = effectiveGroesse === 'wide'
+  const isTall = effectiveGroesse === 'tall'
+  const colSpan = isWide || isTall ? 'col-span-2' : 'col-span-1'
+  // Fixed pixel heights: Klein & Mittel = 176px, Groß = 307px
+  const height = isTall ? 307 : 176
 
   // ── Foto ─────────────────────────────────────────────────────────────
   if (item.typ === 'foto') {
     return (
       <div
         {...handlers}
-        className={`${colSpan} ${rowSpan} relative overflow-hidden select-none`}
-        style={{ borderRadius: RADIUS, aspectRatio, transform: pressing ? 'scale(0.97)' : 'scale(1)', transition: pressing ? 'transform 200ms ease' : 'transform 150ms ease' }}
+        className={`${colSpan} relative select-none overflow-hidden`}
+        style={{ height, borderRadius: RADIUS, transform: pressing ? 'scale(0.97)' : 'scale(1)', transition: pressing ? 'transform 200ms ease' : 'transform 150ms ease' }}
       >
         <Image src={item.url} alt={item.titel ?? ''} fill className="object-cover" sizes="(max-width:430px) 50vw" unoptimized />
         <InfoBar item={item} />
@@ -184,7 +189,7 @@ export default function MediaCard({ item, onLongPress, onPlayVideo, onViewPhoto 
       <div
         {...handlers}
         className={`${colSpan} relative overflow-hidden select-none`}
-        style={{ borderRadius: RADIUS, aspectRatio: '16 / 9', backgroundColor: '#111', transform: pressing ? 'scale(0.97)' : 'scale(1)', transition: pressing ? 'transform 200ms ease' : 'transform 150ms ease' }}
+        style={{ height: 176, borderRadius: RADIUS, backgroundColor: '#111', transform: pressing ? 'scale(0.97)' : 'scale(1)', transition: pressing ? 'transform 200ms ease' : 'transform 150ms ease' }}
       >
         {item.thumbnailUrl && (
           <Image src={item.thumbnailUrl} alt={item.titel ?? ''} fill className="object-cover" sizes="(max-width:430px) 100vw" unoptimized />
@@ -204,15 +209,16 @@ export default function MediaCard({ item, onLongPress, onPlayVideo, onViewPhoto 
     )
   }
 
-  // ── Dokument (PDF) ────────────────────────────────────────────────────
+  // ── Dokument (PDF) — always sm (col-span-1, 176px) ───────────────────
   return (
     <div
       {...handlers}
-      className={`${colSpan} relative overflow-hidden select-none`}
-      style={{ borderRadius: RADIUS, aspectRatio: '1 / 1', backgroundColor: '#F0EDE8', transform: pressing ? 'scale(0.97)' : 'scale(1)', transition: pressing ? 'transform 200ms ease' : 'transform 150ms ease' }}
+      className="col-span-1 relative overflow-hidden select-none"
+      style={{ height: 176, borderRadius: RADIUS, backgroundColor: '#F0EDE8', transform: pressing ? 'scale(0.97)' : 'scale(1)', transition: pressing ? 'transform 200ms ease' : 'transform 150ms ease' }}
     >
+      {/* Thumbnail or icon */}
       {item.thumbnailUrl ? (
-        <Image src={item.thumbnailUrl} alt={item.titel ?? 'PDF'} fill className="object-cover" sizes="(max-width:430px) 33vw" unoptimized />
+        <Image src={item.thumbnailUrl} alt={item.titel ?? 'PDF'} fill className="object-cover" sizes="(max-width:430px) 50vw" unoptimized />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3">
           <span className="text-[32px]">📄</span>
@@ -220,7 +226,12 @@ export default function MediaCard({ item, onLongPress, onPlayVideo, onViewPhoto 
           {item.dateigroesse && <p className="font-sans text-[10px] text-gray-400">{formatFileSize(item.dateigroesse)}</p>}
         </div>
       )}
-      <span className="absolute top-2 right-2 font-sans font-semibold text-white" style={{ fontSize: 11, background: 'rgba(0,0,0,0.6)', padding: '3px 7px', borderRadius: 4 }}>PDF</span>
+      {/* PDF badge top-right */}
+      <span className="absolute top-2 right-2 font-sans font-semibold text-white"
+        style={{ fontSize: 11, background: 'rgba(0,0,0,0.6)', padding: '3px 7px', borderRadius: 4 }}>
+        PDF
+      </span>
+      {/* Title overlay bottom-left */}
       <InfoBar item={item} />
       {!item.datumJahr && <MissingDateBadge />}
     </div>

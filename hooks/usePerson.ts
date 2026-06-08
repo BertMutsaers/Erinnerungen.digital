@@ -8,6 +8,13 @@ export interface Person {
   title: string
   description?: string
   coverUrl?: string
+  // Date fields
+  geburtsdatumText?: string
+  geburtsdatumJahr?: number
+  geburtsort?:       string
+  sterbedatumText?:  string
+  sterbedatumJahr?:  number
+  sterbeort?:        string
 }
 
 interface UsePersonResult {
@@ -28,19 +35,42 @@ export function usePerson(bookId: string): UsePersonResult {
     setLoading(true)
     supabase
       .from('books')
-      .select('id, title, description, cover_url')
+      .select('id, title, description, cover_url, project_id')
       .eq('id', bookId)
       .single()
       .then(({ data, error: err }) => {
         if (cancelled) return
         if (err) { setError(err.message); setLoading(false); return }
-        setPerson({
-          id:          data.id,
-          title:       data.title,
-          description: data.description ?? undefined,
-          coverUrl:    data.cover_url   ?? undefined,
-        })
-        setLoading(false)
+        // Fetch project fields for dates/location
+        const projectId = data.project_id
+        if (projectId) {
+          supabase.from('projects').select(
+            'geburtsdatum_text, geburtsdatum_jahr, geburtsort, sterbedatum_text, sterbedatum_jahr, sterbeort'
+          ).eq('id', projectId).single().then(({ data: proj }) => {
+            if (cancelled) return
+            setPerson({
+              id:          data.id,
+              title:       data.title,
+              description: data.description    ?? undefined,
+              coverUrl:    data.cover_url      ?? undefined,
+              geburtsdatumText: proj?.geburtsdatum_text ?? undefined,
+              geburtsdatumJahr: proj?.geburtsdatum_jahr ?? undefined,
+              geburtsort:       proj?.geburtsort        ?? undefined,
+              sterbedatumText:  proj?.sterbedatum_text  ?? undefined,
+              sterbedatumJahr:  proj?.sterbedatum_jahr  ?? undefined,
+              sterbeort:        proj?.sterbeort          ?? undefined,
+            })
+            setLoading(false)
+          })
+        } else {
+          setPerson({
+            id:          data.id,
+            title:       data.title,
+            description: data.description ?? undefined,
+            coverUrl:    data.cover_url   ?? undefined,
+          })
+          setLoading(false)
+        }
       })
     return () => { cancelled = true }
   }, [bookId, tick])

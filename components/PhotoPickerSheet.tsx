@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
-const BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
+const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
 interface LibraryPhoto {
   id:  string
@@ -14,11 +14,13 @@ interface LibraryPhoto {
 interface Props {
   open:     boolean
   albumId:  string
+  bookId?:  string
   onClose:  () => void
   onAdded:  (count: number) => void
 }
 
-export default function PhotoPickerSheet({ open, albumId, onClose, onAdded }: Props) {
+export default function PhotoPickerSheet({ open, albumId, onClose, onAdded, bookId = DEMO_BOOK_ID }: Props) {
+  const BOOK_ID = bookId
   const [photos,   setPhotos]   = useState<LibraryPhoto[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [loading,  setLoading]  = useState(false)

@@ -4,15 +4,17 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { AnalyzeEntry } from '@/app/api/analyze-memory/route'
 
-const BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
+const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
 interface Props {
   open:    boolean
+  bookId?: string
   onClose: () => void
   onSaved: () => void
 }
 
-export default function NewMemorySheet({ open, onClose, onSaved }: Props) {
+export default function NewMemorySheet({ open, onClose, onSaved, bookId = DEMO_BOOK_ID }: Props) {
+  const BOOK_ID = bookId
   const [text,   setText]   = useState('')
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)

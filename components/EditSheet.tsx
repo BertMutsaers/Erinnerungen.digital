@@ -8,12 +8,13 @@ import { resizeImage, ImageInfo } from '@/lib/resizeImage'
 
 interface Props {
   memory:    Memory | null
+  bookId?:   string
   onClose:   () => void
   onSaved:   () => void
   onDeleted: () => void
 }
 
-const BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
+const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
 const KATEGORIEN = [
   { value: 'kindheit',    label: 'Kindheit & Jugend' },
@@ -52,11 +53,12 @@ const Label = ({ children }: { children: React.ReactNode }) => (
   </label>
 )
 
-function storagePath(memoryId: string) {
-  return `${BOOK_ID}/${memoryId}.jpg`
+function storagePath(bookId: string, memoryId: string) {
+  return `${bookId}/${memoryId}.jpg`
 }
 
-export default function EditSheet({ memory, onClose, onSaved, onDeleted }: Props) {
+export default function EditSheet({ memory, onClose, onSaved, onDeleted, bookId = DEMO_BOOK_ID }: Props) {
+  const BOOK_ID = bookId
   const [datum,        setDatum]        = useState('')
   const [titel,        setTitel]        = useState('')
   const [beschreibung, setBeschreibung] = useState('')
@@ -175,7 +177,7 @@ export default function EditSheet({ memory, onClose, onSaved, onDeleted }: Props
 
       // Upload new photo
       if (pendingBlob) {
-        const path = storagePath(memory.id)
+        const path = storagePath(BOOK_ID, memory.id)
         const { error: upErr } = await supabase.storage
           .from('memories-photos')
           .upload(path, pendingBlob, { upsert: true, contentType: 'image/jpeg' })
@@ -187,7 +189,7 @@ export default function EditSheet({ memory, onClose, onSaved, onDeleted }: Props
 
       // Delete photo
       if (pendingDelete && !pendingBlob) {
-        await supabase.storage.from('memories-photos').remove([storagePath(memory.id)])
+        await supabase.storage.from('memories-photos').remove([storagePath(BOOK_ID, memory.id)])
         fotoUrl = null
       }
 
@@ -218,7 +220,7 @@ export default function EditSheet({ memory, onClose, onSaved, onDeleted }: Props
   async function handleDelete() {
     if (!memory) return
     // Also remove photo from storage
-    await supabase.storage.from('memories-photos').remove([storagePath(memory.id)])
+    await supabase.storage.from('memories-photos').remove([storagePath(BOOK_ID, memory.id)])
     const { error } = await supabase.from('memories').delete().eq('id', memory.id)
     if (error) { setToast('Fehler: ' + error.message); return }
     onDeleted()

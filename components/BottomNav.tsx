@@ -4,16 +4,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 interface Props {
-  basePath?: string  // e.g. '/projekte/[id]' — defaults to '' for legacy routes
+  basePath?:          string   // e.g. '/projekte/[id]' or '/demo'
+  zeitstrahlSuffix?:  string   // override for zeitstrahl segment (default '/zeitstrahl')
 }
 
-export default function BottomNav({ basePath = '' }: Props) {
+export default function BottomNav({ basePath = '', zeitstrahlSuffix = '/zeitstrahl' }: Props) {
   const pathname = usePathname()
 
   const TABS = [
-    { href: `${basePath}/zeitstrahl`, fallback: '/',            icon: '⏱', label: 'Zeitstrahl'  },
-    { href: `${basePath}/geschichten`, fallback: '/geschichten', icon: '📖', label: 'Geschichten' },
-    { href: `${basePath}/media`,       fallback: '/media',       icon: '🎬', label: 'Media'       },
+    { href: `${basePath}${zeitstrahlSuffix}`, icon: '⏱', label: 'Zeitstrahl'  },
+    { href: `${basePath}/geschichten`,        icon: '📖', label: 'Geschichten' },
+    { href: `${basePath}/media`,              icon: '🎬', label: 'Media'       },
   ]
 
   return (
@@ -21,13 +22,12 @@ export default function BottomNav({ basePath = '' }: Props) {
       <div className="bg-white/85 backdrop-blur-md border-t border-gray-100">
         <div className="flex">
           {TABS.map((tab) => {
-            const href   = tab.href || tab.fallback
-            const active = pathname === href || pathname === tab.fallback ||
-                           pathname.endsWith(tab.href.split('/').pop() ?? '')
+            const active = pathname === tab.href ||
+                           pathname.endsWith(tab.href.split('/').pop() ?? '__never__')
             return (
               <Link
-                key={href}
-                href={href}
+                key={tab.href}
+                href={tab.href}
                 className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 font-sans transition-colors
                   ${active ? 'text-gray-900' : 'text-[#707070]'}`}
               >

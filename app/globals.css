@@ -3,6 +3,8 @@
 
 :root {
   --bottom-nav-height: 100px;
+  --card-radius: 30px;
+  --widget-gap: 11px;
 }
 
 * { box-sizing: border-box; }

@@ -11,9 +11,9 @@ import NavSpacer from './NavSpacer'
 
 const EMPTY_STORY: Story = { id: '', titel: '', sortOrder: 0 }
 
-interface Props { bookId: string; basePath?: string }
+interface Props { bookId: string; basePath?: string; readOnly?: boolean }
 
-export default function GeschichtenScreen({ bookId, basePath = '' }: Props) {
+export default function GeschichtenScreen({ bookId, basePath = '', readOnly = false }: Props) {
   const router = useRouter()
   const { person }                     = usePerson(bookId)
   const { stories, loading, reload }   = useStories(bookId)
@@ -45,23 +45,27 @@ export default function GeschichtenScreen({ bookId, basePath = '' }: Props) {
           {stories.map((story) => (
             <StoryCard key={story.id} story={story}
               onClick={(s) => router.push(`/stories/${s.id}`)}
-              onLongPress={(s) => setEditing(s)} />
+              onLongPress={readOnly ? () => {} : (s) => setEditing(s)} />
           ))}
         </div>
       )}
 
-      <button onClick={() => setEditing(EMPTY_STORY)}
-        className="fixed z-30 flex items-center justify-center rounded-full bg-gray-900 text-white shadow-lg active:opacity-80"
-        style={{ bottom: 84, right: 16, width: 48, height: 48, fontSize: 28, lineHeight: 1 }}>
-        ⊕
-      </button>
-
-      <StoryEditSheet
-        open={editing !== undefined}
-        story={editing ?? null}
-        onClose={() => setEditing(undefined)}
-        onSaved={() => { reload(); showToast('✓ Gespeichert') }}
-        onDeleted={() => { reload(); showToast('Geschichte gelöscht') }} />
+      {!readOnly && (
+        <>
+          <button onClick={() => setEditing(EMPTY_STORY)}
+            className="fixed z-30 flex items-center justify-center rounded-full bg-gray-900 text-white shadow-lg active:opacity-80"
+            style={{ bottom: 84, right: 16, width: 48, height: 48, fontSize: 28, lineHeight: 1 }}>
+            ⊕
+          </button>
+          <StoryEditSheet
+            open={editing !== undefined}
+            story={editing ?? null}
+            bookId={bookId}
+            onClose={() => setEditing(undefined)}
+            onSaved={() => { reload(); showToast('✓ Gespeichert') }}
+            onDeleted={() => { reload(); showToast('Geschichte gelöscht') }} />
+        </>
+      )}
 
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[70] bg-gray-900 text-white text-[13px] font-sans px-5 py-2.5 rounded-full shadow-lg whitespace-nowrap animate-fade-in">

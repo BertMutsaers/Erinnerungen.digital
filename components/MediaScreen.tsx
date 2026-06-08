@@ -347,7 +347,7 @@ export default function MediaScreen({ bookId: bookIdProp, basePath = '' }: Media
       {/* Grid — albums + media mixed by datum_jahr */}
       {(loading || albumsLoading) ? (
         <div className="grid grid-cols-2 gap-[11px] px-4">
-          {[...Array(4)].map((_, i) => <div key={i} className="col-span-2 bg-gray-200 animate-pulse rounded-[18px]" style={{ height: 180 }} />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="col-span-2 bg-gray-200 animate-pulse" style={{ height: 176, borderRadius: 'var(--card-radius)' }} />)}
         </div>
       ) : items.length === 0 && albums.length === 0 ? (
         <div className="px-4 py-16 text-center">
@@ -466,6 +466,7 @@ export default function MediaScreen({ bookId: bookIdProp, basePath = '' }: Media
 
       <NewAlbumSheet
         open={newAlbumOpen}
+        bookId={BOOK_ID}
         onClose={() => setNewAlbumOpen(false)}
         onSaved={(_, count) => { reloadAlbums(); showToast(`Album erstellt · ${count} Fotos`) }}
       />

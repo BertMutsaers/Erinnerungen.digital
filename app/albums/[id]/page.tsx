@@ -15,7 +15,7 @@ import MediaCard from '@/components/MediaCard'
 import BottomNav from '@/components/BottomNav'
 import NavSpacer from '@/components/NavSpacer'
 
-const BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
+const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
 function mapMediaRow(r: Record<string, unknown>): MediaItem {
   return {
@@ -43,6 +43,7 @@ export default function AlbumDetailPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [album,     setAlbum]     = useState<Album | null>(null)
+  const [bookId,    setBookId]     = useState(DEMO_BOOK_ID)
   const [photos,    setPhotos]    = useState<MediaItem[]>([])
   const [editing,   setEditing]   = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -61,7 +62,7 @@ export default function AlbumDetailPage() {
         .order('datum_jahr',  { ascending: true, nullsFirst: false })
         .order('created_at',  { ascending: true }),
     ])
-    if (a) setAlbum({ id: a.id, titel: a.titel, datumText: a.datum_text ?? undefined, datumJahr: a.datum_jahr ?? undefined, datumMonat: a.datum_monat ?? undefined, datumTag: a.datum_tag ?? undefined, coverUrl: a.cover_url ?? undefined, sortierung: a.sortierung ?? 0, photoCount: 0, previewUrls: [] })
+    if (a) { setBookId(a.book_id ?? DEMO_BOOK_ID); setAlbum({ id: a.id, titel: a.titel, datumText: a.datum_text ?? undefined, datumJahr: a.datum_jahr ?? undefined, datumMonat: a.datum_monat ?? undefined, datumTag: a.datum_tag ?? undefined, coverUrl: a.cover_url ?? undefined, sortierung: a.sortierung ?? 0, photoCount: 0, previewUrls: [] }) }
     if (m) setPhotos(m.map(mapMediaRow))
   }, [id])
 
@@ -81,11 +82,11 @@ export default function AlbumDetailPage() {
         const file = files[i]
         const { blob } = await resizeImage(file, { maxW: 800, maxH: 800 })
         const ts   = Date.now() + i
-        const path = `${BOOK_ID}/album/${id}/${ts}-${file.name.replace(/[^a-z0-9.]/gi, '_')}`
+        const path = `${bookId}/album/${id}/${ts}-${file.name.replace(/[^a-z0-9.]/gi, '_')}`
         await supabase.storage.from('media-files').upload(path, blob, { upsert: false, contentType: 'image/jpeg' })
         const { data } = supabase.storage.from('media-files').getPublicUrl(path)
         await supabase.from('media').insert({
-          book_id:     BOOK_ID,
+          book_id:     bookId,
           album_id:    id,
           typ:         'foto',
           url:         data.publicUrl,
@@ -222,6 +223,7 @@ export default function AlbumDetailPage() {
       <PhotoPickerSheet
         open={showPicker}
         albumId={id}
+        bookId={bookId}
         onClose={() => setShowPicker(false)}
         onAdded={(count) => { load(); showToast(`✓ ${count} ${count === 1 ? 'Foto' : 'Fotos'} hinzugefügt`) }}
       />

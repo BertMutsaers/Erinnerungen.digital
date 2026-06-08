@@ -45,9 +45,10 @@ export default function AlbumCard({ album, onLongPress }: Props) {
 
   return (
     <div
-      className="col-span-2 bg-white rounded-[18px] overflow-hidden select-none flex flex-row"
+      className="col-span-2 bg-white overflow-hidden select-none flex flex-row"
       style={{
-        height:     120,
+        borderRadius: 20,
+        height:     176,
         cursor:     'pointer',
         transform:  pressed ? 'scale(0.97)' : 'scale(1)',
         transition: pressed ? 'transform 150ms ease' : 'transform 150ms ease',
@@ -60,7 +61,7 @@ export default function AlbumCard({ album, onLongPress }: Props) {
       {/* ── Photo strip (45%) ── */}
       <div
         className="flex-shrink-0 flex flex-row overflow-hidden"
-        style={{ width: '45%', borderRadius: '14px 0 0 14px' }}
+        style={{ width: '45%', borderRadius: '20px 0 0 20px' }}
       >
         {urls.length === 0 ? (
           <div className="flex-1 flex items-center justify-center" style={{ background: '#E8E8E8', fontSize: 24, color: '#B0B0B0' }}>

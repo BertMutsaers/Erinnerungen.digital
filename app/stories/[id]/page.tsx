@@ -59,7 +59,7 @@ export default function StoryDetailPage() {
     <main className="mx-auto w-full max-w-[430px] min-h-screen bg-[#F2F2F7]" style={{ animation: 'pageFadeIn 200ms ease forwards' }}>
       {/* Header */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-[#F2F2F7]" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={() => router.push('/geschichten')} className="flex items-center gap-1.5 font-sans text-[15px] text-gray-900 active:opacity-60">
+        <button onClick={() => router.back()} className="flex items-center gap-1.5 font-sans text-[15px] text-gray-900 active:opacity-60">
           <span className="text-[20px] leading-none">‹</span>
           <span>Zurück</span>
         </button>

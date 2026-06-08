@@ -24,11 +24,12 @@ export default function StoryCard({ story, onClick, onLongPress }: Props) {
     <article
       {...handlers}
       style={{
+        borderRadius: 20,
         transform:  pressing ? 'scale(0.98)' : 'scale(1)',
         transition: pressing ? 'transform 200ms ease' : 'transform 150ms ease',
         cursor:     'pointer',
       }}
-      className="w-full rounded-[18px] bg-white shadow-sm overflow-hidden select-none"
+      className="w-full bg-white shadow-sm overflow-hidden select-none"
     >
       {/* Photo */}
       {story.fotoUrl ? (

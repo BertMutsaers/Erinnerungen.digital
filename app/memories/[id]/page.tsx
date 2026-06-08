@@ -92,7 +92,7 @@ export default function MemoryDetailPage() {
         style={{ backgroundColor: '#F2F2F7', borderBottom: '1px solid rgba(0,0,0,0.06)' }}
       >
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.back()}
           className="flex items-center gap-1.5 font-sans text-[15px] text-gray-900 active:opacity-60"
         >
           <span className="text-[20px] leading-none">‹</span>

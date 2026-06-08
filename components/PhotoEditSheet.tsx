@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import React from 'react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Photo, PhotoSize } from '@/hooks/usePhotos'
@@ -18,10 +19,19 @@ interface Props {
 const fieldCls = `w-full px-3 py-[10px] rounded-[10px] font-sans text-[14px] text-gray-900
   bg-[#F2F2F7] outline-none transition-colors border border-[rgba(0,0,0,0.06)] placeholder-gray-400 focus:border-gray-400`
 
-const SIZES: { value: PhotoSize; label: string; sub: string }[] = [
-  { value: 'normal', label: '1×1', sub: 'Normal' },
-  { value: 'wide',   label: '2×1', sub: 'Breit'  },
-  { value: 'tall',   label: '1×2', sub: 'Hoch'   },
+const SIZES: { value: PhotoSize; label: string; svg: React.ReactNode }[] = [
+  {
+    value: 'normal', label: 'Klein',
+    svg: <svg width="32" height="28" viewBox="0 0 32 28"><rect x="2" y="8" width="12" height="12" rx="3" fill="currentColor" opacity="0.2" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  },
+  {
+    value: 'wide', label: 'Mittel',
+    svg: <svg width="32" height="28" viewBox="0 0 32 28"><rect x="2" y="8" width="28" height="12" rx="3" fill="currentColor" opacity="0.2" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  },
+  {
+    value: 'tall' as PhotoSize, label: 'Groß',
+    svg: <svg width="32" height="28" viewBox="0 0 32 28"><rect x="2" y="2" width="28" height="22" rx="3" fill="currentColor" opacity="0.2" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  },
 ]
 
 export default function PhotoEditSheet({ photo, onClose, onSaved, onDeleted }: Props) {
@@ -134,14 +144,17 @@ export default function PhotoEditSheet({ photo, onClose, onSaved, onDeleted }: P
           <div>
             <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1.5 font-sans">Größe</label>
             <div className="flex gap-2">
-              {SIZES.map((s) => (
-                <button key={s.value} type="button" onClick={() => setGroesse(s.value)}
-                  className="flex-1 flex flex-col items-center py-2 rounded-[10px] transition-colors"
-                  style={{ backgroundColor: groesse === s.value ? '#000' : '#F2F2F7', color: groesse === s.value ? '#fff' : '#555' }}>
-                  <span className="font-sans font-semibold text-[13px]">{s.label}</span>
-                  <span className="font-sans text-[10px] opacity-60">{s.sub}</span>
-                </button>
-              ))}
+              {SIZES.map((s) => {
+                const active = groesse === s.value
+                return (
+                  <button key={s.value} type="button" onClick={() => setGroesse(s.value as PhotoSize)}
+                    className="flex-1 flex flex-col items-center gap-1.5 transition-colors"
+                    style={{ backgroundColor: active ? '#000' : '#F2F2F7', color: active ? '#fff' : '#707070', borderRadius: 12, padding: '10px 8px' }}>
+                    {s.svg}
+                    <span className="font-sans text-[12px] font-medium">{s.label}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 

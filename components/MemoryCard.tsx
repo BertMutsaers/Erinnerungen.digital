@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { Memory, CardColor } from '@/lib/types'
 import { useLongPress } from '@/hooks/useLongPress'
+import { CARD_RADIUS as RADIUS } from '@/lib/constants'
 
 interface Props {
   memory:      Memory
@@ -52,18 +53,18 @@ export default function MemoryCard({ memory, onClick, onLongPress }: Props) {
     transition: pressing ? 'transform 200ms ease' : 'transform 150ms ease',
   }
 
-  // ── SMALL: 96px tall, horizontal — icon left / text right ───────────────
+  // ── SMALL: aspect-ratio 1/1 (quadratisch) ────────────────────────────────
   if (cardSize === 'small') {
     return (
       <button
         {...handlers}
-        style={{ ...baseStyle, height: 96 }}
-        className="col-span-1 overflow-hidden rounded-[18px] shadow-sm flex flex-row text-left w-full select-none items-stretch"
+        style={{ ...baseStyle, height: 176, borderRadius: RADIUS }}
+        className="col-span-1 overflow-hidden shadow-sm flex flex-row text-left w-full select-none items-stretch"
       >
-        {/* Icon / photo — square left side */}
-        <div className="relative flex-shrink-0" style={{ width: 64, height: 96 }}>
+        {/* Icon / photo — square left half */}
+        <div className="relative flex-shrink-0" style={{ width: '55%' }}>
           {imageUrl ? (
-            <Image src={imageUrl} alt={title ?? ''} fill className="object-cover" sizes="64px" />
+            <Image src={imageUrl} alt={title ?? ''} fill className="object-cover" sizes="100px" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[26px] select-none"
               style={{ backgroundColor: tokens.photoBg }}>
@@ -71,7 +72,6 @@ export default function MemoryCard({ memory, onClick, onLongPress }: Props) {
             </div>
           )}
         </div>
-
         {/* Text */}
         <div className="flex-1 flex flex-col justify-center px-2.5 min-w-0">
           {catLabel && (
@@ -90,18 +90,18 @@ export default function MemoryCard({ memory, onClick, onLongPress }: Props) {
     )
   }
 
-  // ── MEDIUM: horizontal strip, fixed 96px ─────────────────────────────────
+  // ── MEDIUM: aspect-ratio 2/1 (doppelt so breit wie hoch) ─────────────────
   if (cardSize === 'medium') {
     return (
       <button
         {...handlers}
-        style={{ ...baseStyle, height: 96 }}
-        className="col-span-2 overflow-hidden rounded-[18px] shadow-sm flex flex-row text-left w-full select-none items-stretch"
+        style={{ ...baseStyle, height: 176, borderRadius: RADIUS }}
+        className="col-span-2 overflow-hidden shadow-sm flex flex-row text-left w-full select-none items-stretch"
       >
-        {/* Photo: 96×96 square on the left */}
-        <div className="relative flex-shrink-0" style={{ width: 96, height: 96 }}>
+        {/* Photo: square on the left */}
+        <div className="relative flex-shrink-0" style={{ width: 176, height: 176 }}>
           {imageUrl ? (
-            <Image src={imageUrl} alt={title ?? ''} fill className="object-cover" sizes="96px" />
+            <Image src={imageUrl} alt={title ?? ''} fill className="object-cover" sizes="200px" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-3xl select-none"
               style={{ backgroundColor: tokens.photoBg }}>
@@ -109,8 +109,7 @@ export default function MemoryCard({ memory, onClick, onLongPress }: Props) {
             </div>
           )}
         </div>
-
-        {/* Text: fills remaining width */}
+        {/* Text */}
         <div className="flex-1 flex flex-col justify-center px-3 min-w-0">
           {catLabel && (
             <p className="text-[10px] uppercase tracking-widest font-sans mb-0.5"
@@ -124,8 +123,6 @@ export default function MemoryCard({ memory, onClick, onLongPress }: Props) {
             <p className="text-[11px] font-sans mt-1" style={{ color: tokens.metaColor }}>{datumLabel}</p>
           )}
         </div>
-
-        {/* Arrow */}
         <div className="flex items-center pr-3 flex-shrink-0">
           <span className="text-[18px] leading-none" style={{ color: '#C7C7CC' }}>›</span>
         </div>
@@ -133,16 +130,16 @@ export default function MemoryCard({ memory, onClick, onLongPress }: Props) {
     )
   }
 
-  // ── LARGE / LG-BLACK: photo top 170px + text block below ────────────────
+  // ── LARGE / LG-BLACK: aspect-ratio 13/10 — volle Breite, deutlich höher ──
   const isBlack = cardSize === 'lg-black'
   return (
     <button
       {...handlers}
-      style={baseStyle}
-      className="col-span-2 overflow-hidden rounded-[18px] shadow-sm flex flex-col text-left w-full select-none"
+      style={{ ...baseStyle, height: 307, borderRadius: RADIUS }}
+      className="col-span-2 overflow-hidden shadow-sm flex flex-col text-left w-full select-none"
     >
-      {/* Photo area: fixed 170px */}
-      <div className="relative w-full flex-shrink-0" style={{ height: 170 }}>
+      {/* Photo area: fills top ~65% */}
+      <div className="relative w-full flex-1">
         {imageUrl ? (
           <>
             <Image src={imageUrl} alt={title ?? ''} fill className="object-cover" sizes="430px" />

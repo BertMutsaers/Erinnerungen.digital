@@ -5,11 +5,12 @@ import { supabase } from '@/lib/supabase'
 import { resizeImage } from '@/lib/resizeImage'
 import { parseDateText } from '@/lib/parseDate'
 
-const BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
+const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 const MAX_PREVIEW = 7   // show up to this many thumbs before "+N more"
 
 interface Props {
   open:    boolean
+  bookId?: string
   onClose: () => void
   onSaved: (albumId: string, photoCount: number) => void
 }
@@ -17,7 +18,8 @@ interface Props {
 const fieldCls = `w-full px-3 py-[10px] rounded-[10px] font-sans text-[14px] text-gray-900
   bg-[#F2F2F7] outline-none border border-[rgba(0,0,0,0.08)] placeholder-gray-400 focus:border-gray-900`
 
-export default function NewAlbumSheet({ open, onClose, onSaved }: Props) {
+export default function NewAlbumSheet({ open, onClose, onSaved, bookId = DEMO_BOOK_ID }: Props) {
+  const BOOK_ID = bookId
   const [step,      setStep]      = useState<1|2>(1)
   const [titel,     setTitel]     = useState('')
   const [datumText, setDatumText] = useState('')
