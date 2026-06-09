@@ -205,7 +205,18 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted,
 
   async function handleCopyLink() {
     if (!shareUrl) return
-    await navigator.clipboard.writeText(shareUrl)
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+    } catch {
+      // Fallback for HTTP / restricted contexts
+      const ta = document.createElement('textarea')
+      ta.value = shareUrl
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none'
+      document.body.appendChild(ta)
+      ta.focus(); ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
     setCopiedLink(true)
     setTimeout(() => setCopiedLink(false), 2000)
   }
