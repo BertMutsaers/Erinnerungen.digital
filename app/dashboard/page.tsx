@@ -10,7 +10,7 @@ export default async function DashboardPage() {
   // Load projects
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, titel, typ, cover_url, zuletzt_bearbeitet, vorname, nachname, firmenname, geburtsdatum_text, geburtsort, sterbedatum_text, sterbeort')
+    .select('id, titel, typ, cover_url, zuletzt_bearbeitet, share_token, vorname, nachname, firmenname, geburtsdatum_text, geburtsort, sterbedatum_text, sterbeort')
     .eq('user_id', user.id)
     .order('zuletzt_bearbeitet', { ascending: false })
 

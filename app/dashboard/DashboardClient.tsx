@@ -15,6 +15,7 @@ interface Project {
   typ:                 string
   cover_url?:          string
   zuletzt_bearbeitet?: string
+  share_token?:        string | null
   vorname?:            string
   nachname?:           string
   firmenname?:         string
@@ -79,7 +80,7 @@ function relativeDate(iso?: string) {
 
 // ── Project card with long-press ─────────────────────────────────────────
 function ProjectCard({ project: p, onTap, onLongPress }: {
-  project:    Project; onTap: () => void; onLongPress: () => void
+  project: Project; onTap: () => void; onLongPress: () => void
 }) {
   const longTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [pressed,  setPressed]  = useState(false)
@@ -119,6 +120,18 @@ function ProjectCard({ project: p, onTap, onLongPress }: {
         {photoSrc
           ? <Image src={photoSrc} alt={p.titel} fill className="object-cover object-top" sizes="300px" unoptimized />
           : <span style={{ fontSize: 48 }}>{TYP_ICON[p.typ] ?? '📖'}</span>}
+        {/* Shared badge */}
+        {p.share_token && (
+          <div
+            title="Per Link geteilt"
+            className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* Text area — white background, black text */}
@@ -150,7 +163,7 @@ export default function DashboardClient({ user, projects: initialProjects, profi
     const { data: { user: u } } = await supabase.auth.getUser()
     if (!u) return
     const { data } = await supabase.from('projects')
-      .select('id, titel, typ, cover_url, zuletzt_bearbeitet, vorname, nachname, firmenname, geburtsdatum_text, geburtsort, sterbedatum_text, sterbeort')
+      .select('id, titel, typ, cover_url, zuletzt_bearbeitet, share_token, vorname, nachname, firmenname, geburtsdatum_text, geburtsort, sterbedatum_text, sterbeort')
       .eq('user_id', u.id).order('zuletzt_bearbeitet', { ascending: false })
     if (data) setProjects(data as Project[])
   }
@@ -240,10 +253,17 @@ export default function DashboardClient({ user, projects: initialProjects, profi
       </main>
 
       <ProjectEditSheet
-        project={editingProject}
+        project={editingProject ? {
+          ...editingProject,
+          coverUrl:          editingProject.cover_url,
+          shareToken:        editingProject.share_token,
+          geburtsdatumText:  editingProject.geburtsdatum_text,
+          sterbedatumText:   editingProject.sterbedatum_text,
+        } : null}
         onClose={() => setEditingProject(null)}
         onSaved={() => { reloadProjects(); showToast('✓ Gespeichert') }}
         onDeleted={() => { reloadProjects(); showToast('Erinnerungsbuch gelöscht') }}
+        onShareChanged={reloadProjects}
       />
 
       {toast && (

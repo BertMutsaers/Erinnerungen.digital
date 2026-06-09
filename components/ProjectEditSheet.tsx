@@ -7,11 +7,12 @@ import { resizeProfileImage } from '@/lib/resizeImage'
 import { parseDateText } from '@/lib/parseDate'
 
 interface Project {
-  id:        string
-  titel:     string
-  vorname?:  string
-  nachname?: string
-  coverUrl?: string
+  id:          string
+  titel:       string
+  vorname?:    string
+  nachname?:   string
+  coverUrl?:   string
+  shareToken?: string | null
   geburtsdatumText?: string
   geburtsort?:       string
   sterbedatumText?:  string
@@ -19,10 +20,11 @@ interface Project {
 }
 
 interface Props {
-  project:   Project | null
-  onClose:   () => void
-  onSaved:   () => void
-  onDeleted: () => void
+  project:         Project | null
+  onClose:         () => void
+  onSaved:         () => void
+  onDeleted:       () => void
+  onShareChanged?: () => void   // called after token create/revoke/regenerate
 }
 
 const fieldCls = `w-full px-4 py-3 rounded-[12px] font-sans text-[15px] text-gray-900
@@ -36,7 +38,7 @@ const OptLabel = () => (
   </span>
 )
 
-export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted }: Props) {
+export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted, onShareChanged }: Props) {
   const open = project !== null
 
   const [vorname,        setVorname]        = useState('')
@@ -54,6 +56,13 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted 
   const [confirmDelete,  setConfirmDelete]  = useState(false)
   const [deleting,       setDeleting]       = useState(false)
 
+  // ── Share state ────────────────────────────────────────────────────────────
+  const [shareToken,      setShareToken]      = useState<string | null>(null)
+  const [shareLoading,    setShareLoading]    = useState(false)
+  const [copiedLink,      setCopiedLink]      = useState(false)
+  const [confirmRevoke,   setConfirmRevoke]   = useState(false)
+  const [confirmRegen,    setConfirmRegen]    = useState(false)
+
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -67,6 +76,9 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted 
     setPreviewUrl(null)
     setPendingBlob(null)
     setConfirmDelete(false)
+    setConfirmRevoke(false)
+    setConfirmRegen(false)
+    setShareToken(project.shareToken ?? null)
   }, [project])
 
   useEffect(() => {
@@ -154,6 +166,48 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted 
     setDeleting(false)
     onDeleted()
     onClose()
+  }
+
+  // ── Share helpers ──────────────────────────────────────────────────────────
+
+  const shareUrl = shareToken
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/teilen/${shareToken}`
+    : null
+
+  async function handleCreateToken() {
+    if (!project) return
+    setShareLoading(true)
+    try {
+      const res = await fetch('/api/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projectId: project.id, action: 'create' }) })
+      const json = await res.json()
+      if (json.token) { setShareToken(json.token); onShareChanged?.() }
+    } finally { setShareLoading(false) }
+  }
+
+  async function handleRevokeToken() {
+    if (!project) return
+    setShareLoading(true)
+    try {
+      await fetch('/api/share', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projectId: project.id }) })
+      setShareToken(null); setConfirmRevoke(false); onShareChanged?.()
+    } finally { setShareLoading(false) }
+  }
+
+  async function handleRegenToken() {
+    if (!project) return
+    setShareLoading(true)
+    try {
+      const res = await fetch('/api/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projectId: project.id, action: 'regenerate' }) })
+      const json = await res.json()
+      if (json.token) { setShareToken(json.token); setConfirmRegen(false); onShareChanged?.() }
+    } finally { setShareLoading(false) }
+  }
+
+  async function handleCopyLink() {
+    if (!shareUrl) return
+    await navigator.clipboard.writeText(shareUrl)
+    setCopiedLink(true)
+    setTimeout(() => setCopiedLink(false), 2000)
   }
 
   const displayUrl = previewUrl ?? project.coverUrl
@@ -247,6 +301,97 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted 
               className="w-full py-3.5 rounded-[10px] bg-[#F2F2F7] text-gray-600 font-sans font-semibold text-[15px]">
               Abbrechen
             </button>
+          </div>
+
+          {/* ── Teilen ─────────────────────────────────────────────────── */}
+          <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 20 }}>
+            <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-3 font-sans">Teilen</label>
+
+            {!shareToken ? (
+              /* Not shared yet */
+              <div className="flex flex-col gap-3">
+                <p className="font-sans text-[13px] leading-relaxed" style={{ color: '#6B6B6B' }}>
+                  Erstelle einen privaten Link, über den andere dieses Erinnerungsbuch ansehen (aber nicht bearbeiten) können. Nur wer den Link hat, kann es sehen.
+                </p>
+                <p className="font-sans text-[11px] leading-relaxed" style={{ color: '#B0B0B0' }}>
+                  Hinweis: Mit dem Teilen machst du Inhalte für alle zugänglich, die den Link haben.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCreateToken}
+                  disabled={shareLoading}
+                  className="w-full py-3 rounded-[10px] bg-gray-900 text-white font-sans font-semibold text-[14px] disabled:opacity-40 active:opacity-80">
+                  {shareLoading ? '…' : '🔗 Link erstellen'}
+                </button>
+              </div>
+            ) : (
+              /* Shared — show link + actions */
+              <div className="flex flex-col gap-3">
+                {/* Link display */}
+                <div className="rounded-[12px] px-4 py-3 font-sans text-[12px] break-all leading-relaxed select-all"
+                  style={{ background: '#F2F2F7', color: '#3C3C3E', border: '1px solid rgba(0,0,0,0.07)' }}>
+                  {shareUrl}
+                </div>
+
+                {/* Copy */}
+                <button type="button" onClick={handleCopyLink}
+                  className="w-full py-3 rounded-[10px] bg-gray-900 text-white font-sans font-semibold text-[14px] active:opacity-80">
+                  {copiedLink ? '✓ Kopiert' : '📋 Link kopieren'}
+                </button>
+
+                {/* Revoke */}
+                {!confirmRevoke && !confirmRegen && (
+                  <button type="button" onClick={() => setConfirmRevoke(true)}
+                    className="w-full py-2.5 rounded-[10px] font-sans font-semibold text-[13px] active:opacity-70"
+                    style={{ background: '#FFF1F0', color: '#C0392B' }}>
+                    Freigabe aufheben
+                  </button>
+                )}
+                {confirmRevoke && (
+                  <div className="rounded-[12px] p-4 flex flex-col gap-3" style={{ background: '#FFF1F0', border: '1px solid #FCCAC4' }}>
+                    <p className="font-sans text-[13px] text-center" style={{ color: '#5C1A14' }}>
+                      Der bisherige Link wird damit ungültig. Fortfahren?
+                    </p>
+                    <div className="flex gap-2">
+                      <button onClick={handleRevokeToken} disabled={shareLoading}
+                        className="flex-1 py-2.5 rounded-[10px] font-sans font-semibold text-[13px] text-white disabled:opacity-40"
+                        style={{ background: '#C0392B' }}>
+                        {shareLoading ? '…' : 'Ja, aufheben'}
+                      </button>
+                      <button onClick={() => setConfirmRevoke(false)}
+                        className="flex-1 py-2.5 rounded-[10px] bg-white font-sans font-semibold text-[13px] text-gray-600">
+                        Abbrechen
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Regenerate */}
+                {!confirmRevoke && !confirmRegen && (
+                  <button type="button" onClick={() => setConfirmRegen(true)}
+                    className="w-full py-2.5 rounded-[10px] bg-[#F2F2F7] text-gray-500 font-sans font-semibold text-[13px] active:opacity-70">
+                    Neuen Link erstellen
+                  </button>
+                )}
+                {confirmRegen && (
+                  <div className="rounded-[12px] p-4 flex flex-col gap-3" style={{ background: '#F2F2F7', border: '1px solid rgba(0,0,0,0.08)' }}>
+                    <p className="font-sans text-[13px] text-center text-gray-700">
+                      Der alte Link wird ungültig und ein neuer erstellt. Fortfahren?
+                    </p>
+                    <div className="flex gap-2">
+                      <button onClick={handleRegenToken} disabled={shareLoading}
+                        className="flex-1 py-2.5 rounded-[10px] bg-gray-900 text-white font-sans font-semibold text-[13px] disabled:opacity-40">
+                        {shareLoading ? '…' : 'Neuen Link erstellen'}
+                      </button>
+                      <button onClick={() => setConfirmRegen(false)}
+                        className="flex-1 py-2.5 rounded-[10px] bg-white font-sans font-semibold text-[13px] text-gray-600">
+                        Abbrechen
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Delete */}
