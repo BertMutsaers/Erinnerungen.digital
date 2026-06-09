@@ -28,11 +28,10 @@ export async function middleware(request: NextRequest) {
 
   const isPublic = PUBLIC_ROUTES.includes(path) ||
     path.startsWith('/auth') ||
-    // Demo project is public
-    path.startsWith('/projekte/c0000000') ||
-    path.startsWith('/memories/') ||
-    path.startsWith('/albums/') ||
-    path.startsWith('/stories/')
+    // Public demo
+    path.startsWith('/demo') ||
+    // Legacy demo project route
+    path.startsWith('/projekte/c0000000')
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()

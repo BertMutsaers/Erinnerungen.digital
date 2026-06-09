@@ -157,14 +157,14 @@ export default function DashboardClient({ user, projects: initialProjects, profi
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    window.location.href = '/auth'
+    window.location.href = '/'
   }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F2F2F7' }}>
       {/* Header */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-        <Logo variant="symbol" height={38} />
+        <Link href="/dashboard" aria-label="Dashboard"><Logo variant="symbol" height={38} /></Link>
         <div className="absolute left-1/2 -translate-x-1/2">
           <Logo variant="text" height={30} />
         </div>
@@ -194,8 +194,8 @@ export default function DashboardClient({ user, projects: initialProjects, profi
           </h1>
           <p className="font-sans text-[14px] mt-1" style={{ color: '#9B9B9B' }}>
             {projects.length === 0
-              ? 'Du hast noch keine Projekte.'
-              : `${projects.length} ${projects.length === 1 ? 'Projekt' : 'Projekte'}`}
+              ? 'Du hast noch keine Erinnerungsbücher.'
+              : `${projects.length} ${projects.length === 1 ? 'Erinnerungsbuch' : 'Erinnerungsbücher'}`}
           </p>
         </div>
 
@@ -206,12 +206,12 @@ export default function DashboardClient({ user, projects: initialProjects, profi
             style={{ background: '#fff', borderRadius: 24, padding: '60px 32px', border: '1.5px dashed rgba(0,0,0,0.12)' }}
           >
             <span className="text-[48px] mb-4">📖</span>
-            <p className="font-serif text-[20px] font-bold text-gray-900 mb-6">Dein erstes Projekt wartet.</p>
+            <p className="font-serif text-[20px] font-bold text-gray-900 mb-6">Dein erstes Erinnerungsbuch wartet.</p>
             <Link
               href="/projekte/neu"
               className="px-6 py-3 rounded-full bg-gray-900 text-white font-sans font-semibold text-[15px] active:opacity-80"
             >
-              + Neues Projekt anlegen
+              + Neues Erinnerungsbuch anlegen
             </Link>
           </div>
         ) : (
@@ -232,7 +232,7 @@ export default function DashboardClient({ user, projects: initialProjects, profi
               style={{ borderRadius: 20, border: '1.5px dashed rgba(0,0,0,0.15)', minHeight: 220, padding: 32 }}
             >
               <span className="font-serif text-[18px]" style={{ fontStyle: 'italic', color: '#B0B0B0' }}>
-                + Neues Projekt anlegen
+                + Neues Erinnerungsbuch anlegen
               </span>
             </Link>
           </div>

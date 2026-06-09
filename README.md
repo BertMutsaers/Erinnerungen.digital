@@ -108,3 +108,24 @@ Damit bezieht `usePerson` beim nächsten Seitenaufruf immer die neue Bildversion
 
 - Erscheint nur, wenn ein Profilfoto vorhanden ist (`coverUrl`). Ohne Foto: Initialen auf cremem Hintergrund (`#F5F0E8`), kein Effekt.
 - **500 ms Long-Press** auf das Polaroid öffnet ein Action Sheet: „Neues Foto wählen" oder „Foto entfernen".
+
+---
+
+## Vor dem Live-Gang — offene Punkte
+
+### E-Mail / SMTP ⚠️
+Vor dem Live-Gang einen eigenen SMTP-/E-Mail-Dienst (z.B. **Resend**, Postmark oder SendGrid) in Supabase hinterlegen.
+
+**Grund:** Der eingebaute Supabase-E-Mail-Versand ist stark rate-limited (nur wenige Mails/Stunde) und ausschließlich für Tests geeignet. Ohne eigenen E-Mail-Dienst funktionieren Registrierungs-Bestätigung und Passwort-Reset für echte Nutzer nicht zuverlässig (`email rate limit exceeded`).
+
+**Einrichten:** Supabase Dashboard → Authentication → Settings → SMTP Settings → eigenen Provider eintragen.
+
+### Supabase URL Configuration
+Redirect-URLs für Produktions-Domain eintragen:
+- `https://<domain>/auth/callback`
+- `https://<domain>/**`
+
+(aktuell nur `localhost:3000` eingetragen — reicht nur für lokale Entwicklung)
+
+### E-Mail-Bestätigung bei Registrierung
+Prüfen ob „Confirm email" in Supabase aktiv ist. Falls ja: die Registrierungs-Logik in `app/auth/page.tsx` gibt aktuell nach `signUp()` keine Meldung aus, dass eine Bestätigungs-E-Mail verschickt wurde — der Nutzer wird blind zu `/dashboard` weitergeleitet. Vor Live-Gang: nach `signUp()` prüfen ob `session === null` (= E-Mail-Bestätigung ausstehend) und entsprechenden Hinweis anzeigen.

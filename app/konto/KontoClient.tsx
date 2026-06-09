@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { resizeAvatarImage } from '@/lib/resizeImage'
@@ -99,7 +100,7 @@ export default function KontoClient({ user, profile }: Props) {
 
   async function handleSignOut() {
     await supabase.auth.signOut()
-    window.location.href = '/auth'
+    window.location.href = '/'
   }
 
   const ini = initials(vorname, nachname, user.email ?? '')
@@ -115,9 +116,9 @@ export default function KontoClient({ user, profile }: Props) {
           <span className="text-[20px] leading-none">‹</span>
           <span>Dashboard</span>
         </button>
-        <div className="absolute left-1/2 -translate-x-1/2">
+        <Link href="/dashboard" className="absolute left-1/2 -translate-x-1/2 active:opacity-60">
           <Logo variant="text" height={30} />
-        </div>
+        </Link>
         <div style={{ width: 56 }} />
       </header>
 

@@ -1,7 +1,13 @@
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
+import { createSupabaseServer } from '@/lib/supabase-server'
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Logged-in users go straight to the dashboard
+  const supabase = await createSupabaseServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect('/dashboard')
   return (
     <div className="font-sans" style={{ backgroundColor: '#fff', color: '#000' }}>
 
