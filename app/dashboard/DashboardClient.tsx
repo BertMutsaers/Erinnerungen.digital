@@ -1,11 +1,13 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import Logo from '@/components/Logo'
+import ProjectEditSheet from '@/components/ProjectEditSheet'
 
 interface Project {
   id:                  string
@@ -16,6 +18,10 @@ interface Project {
   vorname?:            string
   nachname?:           string
   firmenname?:         string
+  geburtsdatum_text?:  string
+  geburtsort?:         string
+  sterbedatum_text?:   string
+  sterbeort?:          string
 }
 
 interface Profile {
@@ -68,9 +74,78 @@ function relativeDate(iso?: string) {
   return new Date(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })
 }
 
-export default function DashboardClient({ user, projects, profile }: Props) {
-  const router = useRouter()
+// ── Project card with long-press ─────────────────────────────────────────
+function ProjectCard({ project: p, onTap, onLongPress }: {
+  project:    Project; onTap: () => void; onLongPress: () => void
+}) {
+  const longTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [pressed,  setPressed]  = useState(false)
+  const tapStarted = useRef(false)
+
+  function onPointerDown() {
+    tapStarted.current = true; setPressed(true)
+    longTimer.current = setTimeout(() => {
+      tapStarted.current = false; setPressed(false)
+      if (navigator.vibrate) navigator.vibrate(40)
+      onLongPress()
+    }, 500)
+  }
+  function onPointerUp() {
+    clearTimeout(longTimer.current!)
+    if (!tapStarted.current) return
+    tapStarted.current = false; setPressed(false); onTap()
+  }
+  function onPointerLeave() {
+    clearTimeout(longTimer.current!); tapStarted.current = false; setPressed(false)
+  }
+
+  const photoSrc = p.cover_url
+    ? `${p.cover_url}${p.cover_url.includes('?') ? '&' : '?'}t=${p.zuletzt_bearbeitet ?? Date.now()}`
+    : null
+
+  return (
+    <div onPointerDown={onPointerDown} onPointerUp={onPointerUp}
+      onPointerLeave={onPointerLeave} onPointerCancel={onPointerLeave}
+      className="bg-white rounded-[20px] overflow-hidden select-none"
+      style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'pointer',
+        transform: pressed ? 'scale(0.97)' : 'scale(1)',
+        transition: pressed ? 'transform 200ms ease' : 'transform 150ms ease' }}>
+
+      {/* Photo area ~65% of card */}
+      <div className="relative flex items-center justify-center" style={{ height: 160, background: '#E8E8E8' }}>
+        {photoSrc
+          ? <Image src={photoSrc} alt={p.titel} fill className="object-cover object-top" sizes="300px" unoptimized />
+          : <span style={{ fontSize: 48 }}>{TYP_ICON[p.typ] ?? '📖'}</span>}
+      </div>
+
+      {/* Text area — white background, black text */}
+      <div style={{ padding: '16px 20px 20px', background: '#fff' }}>
+        <p className="font-serif font-bold text-[20px] text-gray-900 leading-tight">{p.titel}</p>
+        <p className="font-sans text-[12px] mt-2" style={{ color: '#B0B0B0' }}>
+          Zuletzt bearbeitet: {relativeDate(p.zuletzt_bearbeitet)}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export default function DashboardClient({ user, projects: initialProjects, profile }: Props) {
+  const router    = useRouter()
   const firstName = profile?.vorname ?? user.email?.split('@')[0] ?? ''
+  const [projects,       setProjects]       = useState(initialProjects)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [toast,          setToast]          = useState<string | null>(null)
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3000) }
+
+  async function reloadProjects() {
+    const { data: { user: u } } = await supabase.auth.getUser()
+    if (!u) return
+    const { data } = await supabase.from('projects')
+      .select('id, titel, typ, cover_url, zuletzt_bearbeitet, vorname, nachname, firmenname, geburtsdatum_text, geburtsort, sterbedatum_text, sterbeort')
+      .eq('user_id', u.id).order('zuletzt_bearbeitet', { ascending: false })
+    if (data) setProjects(data as Project[])
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -81,22 +156,14 @@ export default function DashboardClient({ user, projects, profile }: Props) {
     <div className="min-h-screen" style={{ backgroundColor: '#F2F2F7' }}>
       {/* Header */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-        <Logo variant="text" height={28} />
-
-        <div className="relative group">
-          <button className="w-9 h-9 rounded-full bg-gray-900 text-white font-sans font-semibold text-[13px] flex items-center justify-center">
-            {initials(user.email ?? '', profile)}
-          </button>
-          {/* Dropdown */}
-          <div className="absolute right-0 top-11 w-44 bg-white rounded-[14px] shadow-lg border border-gray-100 py-1 hidden group-focus-within:block">
-            <Link href="/konto" className="block px-4 py-2.5 font-sans text-[14px] text-gray-700 hover:bg-gray-50">
-              Mein Konto
-            </Link>
-            <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 font-sans text-[14px] text-red-500 hover:bg-gray-50">
-              Abmelden
-            </button>
-          </div>
+        <Logo variant="symbol" height={38} />
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <Logo variant="text" height={30} />
         </div>
+
+        <Link href="/konto" className="w-9 h-9 rounded-full bg-gray-900 text-white font-sans font-semibold text-[13px] flex items-center justify-center active:opacity-70">
+          {initials(user.email ?? '', profile)}
+        </Link>
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-10">
@@ -128,33 +195,14 @@ export default function DashboardClient({ user, projects, profile }: Props) {
             </Link>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+          <div className="dashboard-grid">
             {projects.map((p) => (
-              <Link
+              <ProjectCard
                 key={p.id}
-                href={`/projekte/${p.id}/zeitstrahl`}
-                className="block bg-white rounded-[20px] overflow-hidden hover:scale-[1.02] transition-transform"
-                style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
-              >
-                {/* Cover */}
-                <div className="relative flex items-center justify-center" style={{ height: 160, background: '#F2F2F7' }}>
-                  {p.cover_url ? (
-                    <Image src={p.cover_url} alt={p.titel} fill className="object-cover" sizes="300px" unoptimized />
-                  ) : (
-                    <span style={{ fontSize: 48 }}>{TYP_ICON[p.typ] ?? '📖'}</span>
-                  )}
-                </div>
-                {/* Info */}
-                <div style={{ padding: '16px 20px 20px' }}>
-                  <p className="font-sans text-[10px] uppercase tracking-widest mb-1.5" style={{ color: '#9B9B9B' }}>
-                    {TYP_LABEL[p.typ] ?? p.typ}
-                  </p>
-                  <p className="font-serif font-bold text-[20px] text-gray-900 leading-tight">{p.titel}</p>
-                  <p className="font-sans text-[12px] mt-2" style={{ color: '#B0B0B0' }}>
-                    Zuletzt bearbeitet: {relativeDate(p.zuletzt_bearbeitet)}
-                  </p>
-                </div>
-              </Link>
+                project={p}
+                onTap={() => router.push(`/projekte/${p.id}/zeitstrahl`)}
+                onLongPress={() => setEditingProject(p)}
+              />
             ))}
 
             {/* Add new */}
@@ -170,6 +218,20 @@ export default function DashboardClient({ user, projects, profile }: Props) {
           </div>
         )}
       </main>
+
+      <ProjectEditSheet
+        project={editingProject}
+        onClose={() => setEditingProject(null)}
+        onSaved={() => { reloadProjects(); showToast('✓ Gespeichert') }}
+        onDeleted={() => { reloadProjects(); showToast('Erinnerungsbuch gelöscht') }}
+      />
+
+      {toast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[70] bg-gray-900 text-white text-[13px] font-sans px-5 py-2.5 rounded-full shadow-lg whitespace-nowrap">
+          {toast}
+        </div>
+      )}
     </div>
   )
 }
+

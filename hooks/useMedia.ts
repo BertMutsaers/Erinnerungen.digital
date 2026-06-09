@@ -25,6 +25,23 @@ export interface MediaItem {
   createdAt:     string
 }
 
+/**
+ * Returns the display name for a media item.
+ * Prefers the user-set titel; falls back to the filename derived from the URL
+ * (last path segment, URL-decoded, query params stripped).
+ */
+export function displayTitel(item: Pick<MediaItem, 'titel' | 'url'>): string {
+  if (item.titel?.trim()) return item.titel.trim()
+  try {
+    const path = new URL(item.url).pathname
+    const segment = path.split('/').filter(Boolean).pop() ?? ''
+    // Strip leading timestamp prefix (digits + hyphen) added during upload
+    return decodeURIComponent(segment).replace(/^\d{10,}-/, '')
+  } catch {
+    return item.url
+  }
+}
+
 export function formatMediaDate(item: Pick<MediaItem, 'datumJahr'|'datumMonat'|'datumTag'|'datumText'>): string | null {
   // Prefer the user-entered text (e.g. "Sommer 1958")
   if (item.datumText?.trim()) return item.datumText.trim()

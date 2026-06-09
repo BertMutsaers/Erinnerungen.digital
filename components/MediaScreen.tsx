@@ -96,10 +96,11 @@ interface FileFormProps {
   file:        File
   typ:         'foto' | 'audio' | 'dokument'
   previewUrl?: string
-  onSave:      (file: File, datumText: string) => void
+  onSave:      (file: File, datumText: string, titel: string) => void
   onClose:     () => void
 }
 function FileUploadForm({ file, typ, previewUrl, onSave, onClose }: FileFormProps) {
+  const [titel,       setTitel]       = useState('')
   const [datumText,   setDatumText]   = useState('')
   const [dateError,   setDateError]   = useState(false)
   const [aiEstimate,  setAiEstimate]  = useState<{ text: string } | null>(null)
@@ -129,7 +130,7 @@ function FileUploadForm({ file, typ, previewUrl, onSave, onClose }: FileFormProp
 
   return (
     <div className="px-5 pt-2 pb-6 flex flex-col gap-4">
-      <h2 className="font-serif text-[20px] font-bold text-gray-900">Datum eingeben</h2>
+      <h2 className="font-serif text-[20px] font-bold text-gray-900">Details eingeben</h2>
       <div className="w-full rounded-[12px] overflow-hidden bg-[#F2F2F7] flex items-center justify-center" style={{ height: 100 }}>
         {previewUrl
           // eslint-disable-next-line @next/next/no-img-element
@@ -137,6 +138,17 @@ function FileUploadForm({ file, typ, previewUrl, onSave, onClose }: FileFormProp
           : <span className="text-[40px]">{icon}</span>}
       </div>
       <p className="font-sans text-[12px] text-gray-500 -mt-2 truncate">{file.name}</p>
+
+      <div>
+        <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-1.5 font-sans">Titel (optional)</label>
+        <input
+          type="text"
+          value={titel}
+          onChange={(e) => setTitel(e.target.value)}
+          placeholder={file.name.replace(/\.[^.]+$/, '')}
+          className={fieldCls}
+        />
+      </div>
 
       {typ === 'foto' && !aiDismissed && (
         estimating
@@ -158,7 +170,7 @@ function FileUploadForm({ file, typ, previewUrl, onSave, onClose }: FileFormProp
         <button
           onClick={() => {
             if (!datumText.trim()) { setDateError(true); return }
-            onSave(file, datumText.trim())
+            onSave(file, datumText.trim(), titel.trim())
           }}
           disabled={!datumText.trim()}
           className="w-full py-3.5 rounded-[10px] bg-gray-900 text-white font-sans font-semibold text-[15px] disabled:opacity-40">
@@ -253,7 +265,7 @@ export default function MediaScreen({ bookId: bookIdProp, basePath = '' }: Media
   }
 
   // Actual upload after date confirmed
-  async function doUpload(file: File, datumText: string) {
+  async function doUpload(file: File, datumText: string, titelInput: string) {
     setShowAdd(false)
     setAddStep('menu')
     setPendingFile(null)
@@ -285,7 +297,8 @@ export default function MediaScreen({ bookId: bookIdProp, basePath = '' }: Media
           typ,
           url:          data.publicUrl,
           storage_path: path,
-          titel:        file.name.replace(/\.[^.]+$/, ''),
+          // Use entered title if provided, else fall back to filename (without extension)
+          titel:        titelInput || file.name.replace(/\.[^.]+$/, ''),
           dateigroesse: file.size,
           datum_text:   parsed?.datum_text  || datumText.trim() || null,
           datum_jahr:   parsed?.datum_jahr  ?? null,
@@ -367,6 +380,7 @@ export default function MediaScreen({ bookId: bookIdProp, basePath = '' }: Media
                 <AlbumCard
                   key={entry.key}
                   album={entry.album}
+                  basePath={basePath}
                   onLongPress={setEditingAlbum}
                 />
               ) : (
@@ -419,7 +433,7 @@ export default function MediaScreen({ bookId: bookIdProp, basePath = '' }: Media
                 file={pendingFile}
                 typ={fileType.current}
                 previewUrl={previewUrl}
-                onSave={(file, datumText) => doUpload(file, datumText)}
+                onSave={(file, datumText, titel) => doUpload(file, datumText, titel)}
                 onClose={() => { setShowAdd(false); setPendingFile(null) }}
               />
             ) : addStep === 'video' ? (

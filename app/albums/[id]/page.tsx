@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import { resizeImage } from '@/lib/resizeImage'
 import { parseDateText } from '@/lib/parseDate'
@@ -37,9 +38,12 @@ function mapMediaRow(r: Record<string, unknown>): MediaItem {
   }
 }
 
-export default function AlbumDetailPage() {
-  const { id }  = useParams<{ id: string }>()
-  const router  = useRouter()
+function AlbumDetailInner() {
+  const { id }       = useParams<{ id: string }>()
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const fromPath     = searchParams.get('from') ? decodeURIComponent(searchParams.get('from')!) : null
+  const basePath     = fromPath ? fromPath.replace('/media', '') : ''
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [album,     setAlbum]     = useState<Album | null>(null)
@@ -122,7 +126,7 @@ export default function AlbumDetailPage() {
     <main className="mx-auto w-full max-w-[430px] min-h-screen bg-[#F2F2F7]">
       {/* Sticky header */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-[#F2F2F7]" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={() => router.push('/media')} className="flex items-center gap-1.5 font-sans text-[15px] text-gray-900 active:opacity-60">
+        <button onClick={() => fromPath ? router.push(fromPath) : router.back()} className="flex items-center gap-1.5 font-sans text-[15px] text-gray-900 active:opacity-60">
           <span className="text-[20px] leading-none">‹</span>
           <span>Zurück</span>
         </button>
@@ -213,7 +217,7 @@ export default function AlbumDetailPage() {
         album={editing ? album : null}
         onClose={() => setEditing(false)}
         onSaved={() => { setEditing(false); load() }}
-        onDeleted={() => router.replace('/media')}
+        onDeleted={() => router.replace(fromPath ?? '/media')}
       />
 
       {toast && (
@@ -237,7 +241,15 @@ export default function AlbumDetailPage() {
       />
 
       <NavSpacer />
-      <BottomNav />
+      <BottomNav basePath={basePath} />
     </main>
+  )
+}
+
+export default function AlbumDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <AlbumDetailInner />
+    </Suspense>
   )
 }

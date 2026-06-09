@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { fetchMemoryById, fetchAdjacentMemories } from '@/lib/queries'
@@ -51,10 +52,13 @@ function DetailSkeleton() {
   )
 }
 
-export default function MemoryDetailPage() {
-  const params = useParams<{ id: string }>()
-  const id     = params.id
-  const router = useRouter()
+function MemoryDetailInner() {
+  const params       = useParams<{ id: string }>()
+  const id           = params.id
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const fromPath     = searchParams.get('from') ? decodeURIComponent(searchParams.get('from')!) : null
+  const basePath     = fromPath ? fromPath.replace('/zeitstrahl', '') : ''
 
   const [memory,   setMemory]   = useState<Memory | null>(null)
   const [adjacent, setAdjacent] = useState<{ prev: Memory | null; next: Memory | null }>({ prev: null, next: null })
@@ -92,7 +96,7 @@ export default function MemoryDetailPage() {
         style={{ backgroundColor: '#F2F2F7', borderBottom: '1px solid rgba(0,0,0,0.06)' }}
       >
         <button
-          onClick={() => router.back()}
+          onClick={() => fromPath ? router.replace(fromPath) : router.back()}
           className="flex items-center gap-1.5 font-sans text-[15px] text-gray-900 active:opacity-60"
         >
           <span className="text-[20px] leading-none">‹</span>
@@ -213,7 +217,8 @@ export default function MemoryDetailPage() {
               <div className="flex gap-3 mt-8 mb-20">
                 {adjacent.prev ? (
                   <Link
-                    href={`/memories/${adjacent.prev.id}`}
+                    href={`/memories/${adjacent.prev.id}${fromPath ? `?from=${encodeURIComponent(fromPath)}` : ''}`}
+                    replace
                     className="flex-1 rounded-[14px] bg-white active:opacity-70"
                     style={{ padding: '14px 16px' }}
                   >
@@ -226,7 +231,8 @@ export default function MemoryDetailPage() {
 
                 {adjacent.next ? (
                   <Link
-                    href={`/memories/${adjacent.next.id}`}
+                    href={`/memories/${adjacent.next.id}${fromPath ? `?from=${encodeURIComponent(fromPath)}` : ''}`}
+                    replace
                     className="flex-1 rounded-[14px] bg-white active:opacity-70 text-right"
                     style={{ padding: '14px 16px' }}
                   >
@@ -255,7 +261,16 @@ export default function MemoryDetailPage() {
       />
 
       <NavSpacer />
-      <BottomNav />
+      <BottomNav basePath={basePath} zeitstrahlSuffix={basePath ? '/zeitstrahl' : ''} />
     </main>
+  )
+}
+
+
+export default function MemoryDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <MemoryDetailInner />
+    </Suspense>
   )
 }

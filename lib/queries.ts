@@ -1,8 +1,6 @@
 import { supabase } from './supabase'
 import { Memory } from './types'
 
-const BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
-
 const SELECT_FIELDS = `
   id, title, body, happened_at,
   datum_label, datum_jahr, datum_monat, datum_tag,
@@ -24,7 +22,7 @@ function mapRow(r: Record<string, unknown>): Memory {
     cardColor:      (r.card_color as Memory['cardColor']) ?? undefined,
     pinnedSize:     r.card_size ? (r.card_size as Memory['cardSize']) : undefined,
     groesseManuell: (r.groesse_manuell as boolean) ?? false,
-    imageUrl:       (r.foto_url as string)    ?? undefined,
+    imageUrl:       (r.foto_url as string) ?? undefined,
     icon:           (r.icon as string)        ?? undefined,
     kategorie:      (r.kategorie as string)   ?? undefined,
     bodyExtra:      (r.body_extra as string)  ?? undefined,
@@ -44,10 +42,15 @@ export async function fetchMemoryById(id: string): Promise<Memory | null> {
 export async function fetchAdjacentMemories(
   id: string,
 ): Promise<{ prev: Memory | null; next: Memory | null }> {
+  // Resolve the book_id of this memory first, then query siblings
+  const { data: self } = await supabase
+    .from('memories').select('book_id').eq('id', id).single()
+  if (!self?.book_id) return { prev: null, next: null }
+
   const { data } = await supabase
     .from('memories')
     .select('id, title, datum_jahr, datum_monat, datum_tag, card_size, card_color, groesse_manuell, foto_url, icon, kategorie, datum_label, body_extra')
-    .eq('book_id', BOOK_ID)
+    .eq('book_id', self.book_id)
     .order('datum_jahr',  { ascending: true })
     .order('datum_monat', { ascending: true, nullsFirst: true })
     .order('datum_tag',   { ascending: true, nullsFirst: true })
@@ -60,7 +63,7 @@ export async function fetchAdjacentMemories(
   }
 }
 
-export async function fetchMemories(): Promise<Memory[]> {
+export async function fetchMemories(bookId: string): Promise<Memory[]> {
   const { data, error } = await supabase
     .from('memories')
     .select(`
@@ -68,7 +71,7 @@ export async function fetchMemories(): Promise<Memory[]> {
       datum_label, datum_jahr, datum_monat, datum_tag,
       location, card_size, card_color, groesse_manuell, foto_url, icon, kategorie
     `)
-    .eq('book_id', BOOK_ID)
+    .eq('book_id', bookId)
     .order('datum_jahr', { ascending: true })
     .order('datum_monat', { ascending: true, nullsFirst: true })
     .order('datum_tag', { ascending: true, nullsFirst: true })

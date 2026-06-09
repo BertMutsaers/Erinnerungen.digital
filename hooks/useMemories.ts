@@ -32,9 +32,9 @@ export function useMemories(bookId: string, filter = 'alle'): UseMemoriesResult 
         location, card_size, card_color, groesse_manuell, foto_url, icon, kategorie, body_extra
       `)
       .eq('book_id', bookId)
-      .order('datum_jahr',  { ascending: true })
-      .order('datum_monat', { ascending: true, nullsFirst: true })
-      .order('datum_tag',   { ascending: true, nullsFirst: true })
+      .order('datum_jahr',  { ascending: true, nullsFirst: false })
+      .order('datum_monat', { ascending: true, nullsFirst: false })
+      .order('datum_tag',   { ascending: true, nullsFirst: false })
       .then(({ data, error: err }) => {
         if (cancelled) return
         if (err) { setError(err.message); setLoading(false); return }
@@ -52,7 +52,8 @@ export function useMemories(bookId: string, filter = 'alle'): UseMemoriesResult 
           cardColor:  (r.card_color as import('@/lib/types').CardColor) ?? undefined,
           pinnedSize:     r.card_size ? (r.card_size as import('@/lib/types').CardSize) : undefined,
           groesseManuell: r.groesse_manuell ?? false,
-          imageUrl:       r.foto_url    ?? undefined,
+          // Append updated_at as cache-buster so browser shows fresh image
+          imageUrl:       r.foto_url ?? undefined,
           bodyExtra:      r.body_extra  ?? undefined,
           icon:       r.icon       ?? undefined,
           kategorie:  r.kategorie  ?? undefined,

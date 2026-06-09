@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -9,8 +10,6 @@ import { Story, formatStoryDate } from '@/hooks/useStories'
 import StoryEditSheet from '@/components/StoryEditSheet'
 import BottomNav from '@/components/BottomNav'
 import NavSpacer from '@/components/NavSpacer'
-
-const BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
 interface Adjacent { prev: Story | null; next: Story | null }
 
@@ -27,9 +26,12 @@ function StorySkeleton() {
   )
 }
 
-export default function StoryDetailPage() {
-  const { id }   = useParams<{ id: string }>()
-  const router   = useRouter()
+function StoryDetailInner() {
+  const { id }       = useParams<{ id: string }>()
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const fromPath     = searchParams.get('from') ? decodeURIComponent(searchParams.get('from')!) : null
+  const basePath     = fromPath ? fromPath.replace('/geschichten', '') : ''
 
   const [story,    setStory]    = useState<Story | null>(null)
   const [adjacent, setAdjacent] = useState<Adjacent>({ prev: null, next: null })
@@ -38,17 +40,21 @@ export default function StoryDetailPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [{ data: s }, { data: all }] = await Promise.all([
-      supabase.from('stories').select('*').eq('id', id).single(),
-      supabase.from('stories').select('id, titel, sort_order').eq('book_id', BOOK_ID).order('sort_order', { ascending: true }),
-    ])
-    if (s) setStory({ id: s.id, titel: s.titel, inhalt: s.inhalt ?? undefined, tag: s.tag ?? undefined, erzaehler: s.erzaehler ?? undefined, fotoUrl: s.foto_url ?? undefined, sortOrder: s.sort_order ?? 0, createdAt: s.created_at ?? undefined })
-    if (all) {
-      const idx = all.findIndex((r) => r.id === id)
-      setAdjacent({
-        prev: idx > 0           ? { id: all[idx-1].id, titel: all[idx-1].titel, sortOrder: all[idx-1].sort_order } : null,
-        next: idx < all.length-1 ? { id: all[idx+1].id, titel: all[idx+1].titel, sortOrder: all[idx+1].sort_order } : null,
-      })
+    // Fetch the story first to get its book_id, then query siblings
+    const { data: s } = await supabase.from('stories').select('*').eq('id', id).single()
+    if (s) {
+      setStory({ id: s.id, titel: s.titel, inhalt: s.inhalt ?? undefined, tag: s.tag ?? undefined, erzaehler: s.erzaehler ?? undefined, fotoUrl: s.foto_url ?? undefined, sortOrder: s.sort_order ?? 0, createdAt: s.created_at ?? undefined })
+      const { data: all } = await supabase
+        .from('stories').select('id, titel, sort_order')
+        .eq('book_id', s.book_id)
+        .order('sort_order', { ascending: true })
+      if (all) {
+        const idx = all.findIndex((r) => r.id === id)
+        setAdjacent({
+          prev: idx > 0            ? { id: all[idx-1].id, titel: all[idx-1].titel, sortOrder: all[idx-1].sort_order } : null,
+          next: idx < all.length-1 ? { id: all[idx+1].id, titel: all[idx+1].titel, sortOrder: all[idx+1].sort_order } : null,
+        })
+      }
     }
     setLoading(false)
   }, [id])
@@ -59,7 +65,7 @@ export default function StoryDetailPage() {
     <main className="mx-auto w-full max-w-[430px] min-h-screen bg-[#F2F2F7]" style={{ animation: 'pageFadeIn 200ms ease forwards' }}>
       {/* Header */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-[#F2F2F7]" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-        <button onClick={() => router.back()} className="flex items-center gap-1.5 font-sans text-[15px] text-gray-900 active:opacity-60">
+        <button onClick={() => fromPath ? router.replace(fromPath) : router.back()} className="flex items-center gap-1.5 font-sans text-[15px] text-gray-900 active:opacity-60">
           <span className="text-[20px] leading-none">‹</span>
           <span>Zurück</span>
         </button>
@@ -104,13 +110,19 @@ export default function StoryDetailPage() {
             {(adjacent.prev || adjacent.next) && (
               <div className="flex gap-3 mt-8">
                 {adjacent.prev ? (
-                  <Link href={`/stories/${adjacent.prev.id}`} className="flex-1 rounded-[14px] bg-white active:opacity-70" style={{ padding: '14px 16px' }}>
+                  <Link
+                    href={`/stories/${adjacent.prev.id}${fromPath ? `?from=${encodeURIComponent(fromPath)}` : ''}`}
+                    replace
+                    className="flex-1 rounded-[14px] bg-white active:opacity-70" style={{ padding: '14px 16px' }}>
                     <p className="font-sans text-[11px] text-gray-400 mb-1">← Vorige</p>
                     <p className="font-serif font-bold text-[15px] text-gray-900 line-clamp-2">{adjacent.prev.titel}</p>
                   </Link>
                 ) : <div className="flex-1" />}
                 {adjacent.next ? (
-                  <Link href={`/stories/${adjacent.next.id}`} className="flex-1 rounded-[14px] bg-white active:opacity-70 text-right" style={{ padding: '14px 16px' }}>
+                  <Link
+                    href={`/stories/${adjacent.next.id}${fromPath ? `?from=${encodeURIComponent(fromPath)}` : ''}`}
+                    replace
+                    className="flex-1 rounded-[14px] bg-white active:opacity-70 text-right" style={{ padding: '14px 16px' }}>
                     <p className="font-sans text-[11px] text-gray-400 mb-1">Nächste →</p>
                     <p className="font-serif font-bold text-[15px] text-gray-900 line-clamp-2">{adjacent.next.titel}</p>
                   </Link>
@@ -132,7 +144,15 @@ export default function StoryDetailPage() {
       />
 
       <NavSpacer />
-      <BottomNav />
+      <BottomNav basePath={basePath} />
     </main>
+  )
+}
+
+export default function StoryDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <StoryDetailInner />
+    </Suspense>
   )
 }

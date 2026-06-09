@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useRef, useState } from 'react'
-import { MediaItem, formatFileSize, formatMediaDate } from '@/hooks/useMedia'
+import { MediaItem, formatFileSize, formatMediaDate, displayTitel } from '@/hooks/useMedia'
 import { useLongPress } from '@/hooks/useLongPress'
 
 interface Props {
@@ -46,15 +46,16 @@ function CardShell({
 
 // ── Gradient info bar (title + date) ────────────────────────────────────
 function InfoBar({ item }: { item: MediaItem }) {
-  const dateStr = formatMediaDate(item)
-  if (!item.titel && !dateStr) return null
+  const dateStr  = formatMediaDate(item)
+  const nameStr  = displayTitel(item)
+  if (!nameStr && !dateStr) return null
   return (
     <div
       className="absolute bottom-0 inset-x-0"
       style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.65))', padding: '24px 12px 8px' }}
     >
-      {item.titel && <p className="font-sans text-[13px] font-medium text-white truncate">{item.titel}</p>}
-      {dateStr    && <p className="font-sans text-[11px] font-medium text-white/85 mt-0.5">{dateStr}</p>}
+      {nameStr && <p className="font-sans text-[13px] font-medium text-white truncate">{nameStr}</p>}
+      {dateStr && <p className="font-sans text-[11px] font-medium text-white/85 mt-0.5">{dateStr}</p>}
     </div>
   )
 }
@@ -103,7 +104,7 @@ function AudioCard({ item, handlers, pressing }: { item: MediaItem; handlers: ob
         <div className="flex items-center gap-2">
           <span className="text-[18px] flex-shrink-0">🎵</span>
           <p className="flex-1 font-sans text-[14px] font-semibold text-gray-900 truncate">
-            {item.titel ?? 'Audio'}
+            {displayTitel(item)}
           </p>
         </div>
         {/* Row 2: play + progress + time */}
@@ -222,7 +223,7 @@ export default function MediaCard({ item, onLongPress, onPlayVideo, onViewPhoto 
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3">
           <span className="text-[32px]">📄</span>
-          <p className="font-sans text-[11px] font-semibold text-gray-700 text-center line-clamp-2 leading-tight">{item.titel ?? 'Dokument'}</p>
+          <p className="font-sans text-[11px] font-semibold text-gray-700 text-center line-clamp-2 leading-tight">{displayTitel(item)}</p>
           {item.dateigroesse && <p className="font-sans text-[10px] text-gray-400">{formatFileSize(item.dateigroesse)}</p>}
         </div>
       )}

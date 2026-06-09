@@ -34,3 +34,14 @@ body {
 .animate-fade-in {
   animation: fade-in 0.2s ease-out forwards;
 }
+
+/* ── Dashboard project grid — responsive columns ────────────────── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (min-width: 768px)  { .dashboard-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .dashboard-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1280px) { .dashboard-grid { grid-template-columns: repeat(5, 1fr); } }
+

@@ -21,7 +21,7 @@ export function formatStoryDate(createdAt?: string): string {
   })
 }
 
-export function useStories(bookId: string) {
+export function useStories(bookId: string, projectId?: string) {
   const [stories, setStories] = useState<Story[]>([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState<string | null>(null)
@@ -30,10 +30,15 @@ export function useStories(bookId: string) {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
+    // Query by book_id; if projectId differs (legacy data where project_id ≠ book_id),
+    // also include stories stored under project_id to avoid missing any.
+    const filter = projectId && projectId !== bookId
+      ? `book_id.eq.${bookId},project_id.eq.${projectId}`
+      : `book_id.eq.${bookId}`
     supabase
       .from('stories')
       .select('id, titel, inhalt, tag, erzaehler, foto_url, sort_order, created_at')
-      .eq('book_id', bookId)
+      .or(filter)
       .order('sort_order', { ascending: true })
       .then(({ data, error: err }) => {
         if (cancelled) return
@@ -51,7 +56,7 @@ export function useStories(bookId: string) {
         setLoading(false)
       })
     return () => { cancelled = true }
-  }, [bookId, tick])
+  }, [bookId, projectId, tick])
 
   const reload = useCallback(() => setTick((t) => t + 1), [])
   return { stories, loading, error, reload }

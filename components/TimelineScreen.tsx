@@ -189,7 +189,7 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
                   <MemoryCard
                     key={mem.id}
                     memory={mem}
-                    onClick={(m) => router.push(`/memories/${m.id}`)}
+                    onClick={(m) => router.push(`/memories/${m.id}?from=${encodeURIComponent(basePath + '/zeitstrahl')}`)}
                     onLongPress={readOnly ? () => {} : setEditing}
                   />
                 ))}

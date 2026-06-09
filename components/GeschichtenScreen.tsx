@@ -15,8 +15,10 @@ interface Props { bookId: string; basePath?: string; readOnly?: boolean }
 
 export default function GeschichtenScreen({ bookId, basePath = '', readOnly = false }: Props) {
   const router = useRouter()
+  // Extract projectId from basePath (e.g. "/projekte/abc123" → "abc123")
+  const projectId = basePath.split('/').filter(Boolean).pop()
   const { person }                     = usePerson(bookId)
-  const { stories, loading, reload }   = useStories(bookId)
+  const { stories, loading, reload }   = useStories(bookId, projectId)
   const [editing, setEditing]          = useState<Story | null | undefined>(undefined)
   const [toast,   setToast]            = useState<string | null>(null)
 
@@ -44,7 +46,7 @@ export default function GeschichtenScreen({ bookId, basePath = '', readOnly = fa
         <div className="px-4 flex flex-col gap-[11px]">
           {stories.map((story) => (
             <StoryCard key={story.id} story={story}
-              onClick={(s) => router.push(`/stories/${s.id}`)}
+              onClick={(s) => router.push(`/stories/${s.id}?from=${encodeURIComponent(basePath + '/geschichten')}`)}
               onLongPress={readOnly ? () => {} : (s) => setEditing(s)} />
           ))}
         </div>

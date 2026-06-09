@@ -48,15 +48,15 @@ export function planGridLayout(memories: Memory[]): Memory[] {
   const sized = memories.map((mem): Memory & { cardSize: CardSize; cardColor: CardColor } => {
     const cardColor: CardColor = mem.cardColor ?? resolveCardColor(mem.title, mem.body)
 
-    // Keywords always win — even manual overrides can't suppress death/birth highlights
-    if (isHighlight(mem)) {
-      return { ...mem, cardSize: 'lg-black', cardColor }
-    }
-
-    // Manual size: user explicitly chose this in EditSheet → use it directly
+    // Manual size overrides EVERYTHING (incl. keywords) — user's explicit choice
     if (mem.groesseManuell && mem.pinnedSize) {
       return { ...mem, cardSize: mem.pinnedSize, cardColor }
       // Note: 'small' from here still goes through Pass 2 pairing rule
+    }
+
+    // Keywords determine lg-black only when no manual override
+    if (isHighlight(mem)) {
+      return { ...mem, cardSize: 'lg-black', cardColor }
     }
 
     // Automatic: use DB value as hint (seed data, KI suggestions)

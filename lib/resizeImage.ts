@@ -1,4 +1,6 @@
-const QUALITY = 0.82
+const QUALITY         = 0.82
+const PROFILE_SIZE    = 600
+const PROFILE_QUALITY = 0.88
 
 export interface ImageInfo {
   width:  number
@@ -43,6 +45,44 @@ export async function resizeImage(
         },
         'image/jpeg',
         QUALITY,
+      )
+    }
+
+    img.src = url
+  })
+}
+
+/**
+ * Resizes AND center-crops a profile photo to a square (600×600px).
+ * sy is offset to 1/4 so faces (usually at top) stay visible.
+ */
+export async function resizeProfileImage(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bild konnte nicht geladen werden')) }
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width  = PROFILE_SIZE
+      canvas.height = PROFILE_SIZE
+      const ctx = canvas.getContext('2d')!
+
+      const minDim = Math.min(img.width, img.height)
+      const sx = (img.width  - minDim) / 2
+      const sy = (img.height - minDim) / 4   // top-biased: faces stay in frame
+
+      ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, PROFILE_SIZE, PROFILE_SIZE)
+
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(url)
+          if (!blob) { reject(new Error('Canvas toBlob fehlgeschlagen')); return }
+          resolve(blob)
+        },
+        'image/jpeg',
+        PROFILE_QUALITY,
       )
     }
 

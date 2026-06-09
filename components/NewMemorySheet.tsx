@@ -6,6 +6,31 @@ import type { AnalyzeEntry } from '@/app/api/analyze-memory/route'
 
 const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
+const THIS_YEAR = new Date().getFullYear()
+const YEAR_RE   = /\b(18|19|20)\d{2}\b/
+const DATE_RE   = /\d{1,2}\.\d{1,2}\.\d{4}/
+
+function lineHasDate(line: string): boolean {
+  if (DATE_RE.test(line)) return true
+  const m = line.match(YEAR_RE)
+  if (!m) return false
+  const year = parseInt(m[0])
+  return year >= 1800 && year <= THIS_YEAR
+}
+
+// Pre-split table into individual event lines before sending to KI
+function splitIntoEvents(text: string): string[] {
+  return text
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0 && lineHasDate(l))
+}
+
+function isTableMode(text: string): boolean {
+  const events = splitIntoEvents(text)
+  return events.length >= 3
+}
+
 interface Props {
   open:    boolean
   bookId?: string
@@ -13,11 +38,22 @@ interface Props {
   onSaved: () => void
 }
 
+async function analyzeChunk(freitext: string): Promise<AnalyzeEntry[]> {
+  const res = await fetch('/api/analyze-memory', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ freitext }),
+  })
+  if (!res.ok) throw new Error(`KI-Fehler: ${res.status}`)
+  return res.json()
+}
+
 export default function NewMemorySheet({ open, onClose, onSaved, bookId = DEMO_BOOK_ID }: Props) {
   const BOOK_ID = bookId
-  const [text,   setText]   = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error,  setError]  = useState<string | null>(null)
+  const [text,     setText]     = useState('')
+  const [saving,   setSaving]   = useState(false)
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
+  const [error,    setError]    = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -38,20 +74,39 @@ export default function NewMemorySheet({ open, onClose, onSaved, bookId = DEMO_B
 
   if (!open) return null
 
+  const tableMode = isTableMode(text)
+
   async function handleSave() {
     if (!text.trim()) return
     setSaving(true)
     setError(null)
-    try {
-      const res = await fetch('/api/analyze-memory', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ freitext: text }),
-      })
-      if (!res.ok) throw new Error(`KI-Fehler: ${res.status}`)
-      const entries: AnalyzeEntry[] = await res.json()
+    setProgress(null)
 
-      for (const ai of entries) {
+    try {
+      let allEntries: AnalyzeEntry[] = []
+
+      if (tableMode) {
+        // Each line becomes ONE KI call (jede Zeile = ein Ereignis)
+        const lines = splitIntoEvents(text)
+        setProgress({ done: 0, total: lines.length })
+
+        // Process in batches of 10 parallel requests
+        const BATCH = 10
+        for (let i = 0; i < lines.length; i += BATCH) {
+          const batch = lines.slice(i, i + BATCH)
+          const results = await Promise.all(batch.map(analyzeChunk))
+          allEntries = allEntries.concat(results.flat())
+          setProgress({ done: Math.min(i + BATCH, lines.length), total: lines.length })
+        }
+      } else {
+        // Single request for normal text
+        allEntries = await analyzeChunk(text)
+      }
+
+      // Save all entries
+      setProgress({ done: 0, total: allEntries.length })
+      for (let i = 0; i < allEntries.length; i++) {
+        const ai = allEntries[i]
         const { error: dbErr } = await supabase.from('memories').insert({
           book_id:     BOOK_ID,
           title:       ai.titel        || text.slice(0, 80),
@@ -69,6 +124,7 @@ export default function NewMemorySheet({ open, onClose, onSaved, bookId = DEMO_B
           body_extra:  ai.zeitgeschehen || null,
         })
         if (dbErr) throw new Error(dbErr.message)
+        setProgress({ done: i + 1, total: allEntries.length })
       }
 
       setText('')
@@ -78,42 +134,71 @@ export default function NewMemorySheet({ open, onClose, onSaved, bookId = DEMO_B
       setError(String(err))
     } finally {
       setSaving(false)
+      setProgress(null)
     }
   }
+
+  const lineCount = text.split('\n').filter(l => l.trim()).length
 
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" onClick={onClose} />
       <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-[430px] rounded-t-3xl bg-white shadow-2xl">
+
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
 
         <div className="px-5 pb-8 flex flex-col gap-4">
-          <h2 className="font-serif text-[22px] font-bold text-gray-900">Neue Erinnerung</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-serif text-[22px] font-bold text-gray-900">Neue Erinnerung</h2>
+            {tableMode && lineCount > 0 && (
+              <span className="font-sans text-[12px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">
+                Tabellen-Modus · {lineCount} Zeilen
+              </span>
+            )}
+          </div>
 
           <p className="font-sans text-[13px] text-gray-500 leading-snug -mt-2">
-            Schreib einfach drauf los — Datum im Text genügt. Die KI erledigt den Rest.
+            Schreib drauf los — Datum im Text genügt. Tabellen und Listen werden automatisch erkannt.
           </p>
 
           <textarea
             ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={"Im März 1958 haben wir geheiratet…\nJanuar 1942 begann meine Fleischerlehre…\nAm 9. Mai 1953 bekam ich meinen Meisterbrief in Landshut."}
+            required
+            placeholder={"Im März 1958 haben wir geheiratet…\n\nOder Tabelle:\n24.02.1955  Geburt in San Francisco\n1955        Adoption durch Paul Jobs"}
             className="w-full px-3 py-3 rounded-[12px] font-sans text-[15px] text-gray-900 bg-[#F2F2F7] outline-none border border-[rgba(0,0,0,0.06)] placeholder-gray-400 focus:border-gray-400 resize-none"
             style={{ minHeight: 160 }}
           />
 
           {error && <p className="font-sans text-[12px] text-red-500">{error}</p>}
 
+          {/* Progress */}
+          {saving && progress && (
+            <div>
+              <p className="font-sans text-[13px] text-gray-500 mb-1">
+                {`${progress.done} / ${progress.total} ${tableMode ? 'Zeilen' : 'Einträge'} verarbeitet …`}
+              </p>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-gray-900 rounded-full transition-all duration-300"
+                  style={{ width: `${(progress.done / progress.total) * 100}%` }} />
+              </div>
+            </div>
+          )}
+
           <button
             onClick={handleSave}
             disabled={saving || !text.trim()}
             className="w-full py-3.5 rounded-[10px] font-sans font-semibold text-[15px] bg-gray-900 text-white disabled:opacity-40 active:opacity-80"
           >
-            {saving ? 'KI analysiert …' : 'Speichern & KI analysieren lassen'}
+            {saving
+              ? 'KI analysiert …'
+              : tableMode && lineCount > 3
+                ? `${lineCount} Ereignisse speichern & analysieren`
+                : 'Speichern & KI analysieren lassen'}
           </button>
         </div>
       </div>

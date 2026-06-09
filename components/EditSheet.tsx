@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
+import { parseDateText } from '@/lib/parseDate'
 import { Memory, CardColor } from '@/lib/types'
 import { resizeImage, ImageInfo } from '@/lib/resizeImage'
 
@@ -36,10 +37,19 @@ const COLORS: { value: CardColor; bg: string; border: string; activeBorder: stri
   { value: 'schwarz', bg: '#1C1C1E', border: 'rgba(255,255,255,0.15)', activeBorder: '#666' },
 ]
 
-const SIZES: { value: 'small' | 'medium' | 'large'; label: string; sub: string }[] = [
-  { value: 'small',  label: 'SM', sub: '1 × 1' },
-  { value: 'medium', label: 'MD', sub: '2 × 1' },
-  { value: 'large',  label: 'LG', sub: '2 × 2' },
+const SIZES: { value: 'small' | 'medium' | 'large'; label: string; svg: React.ReactNode }[] = [
+  {
+    value: 'small',  label: 'Klein',
+    svg: <svg width="32" height="28" viewBox="0 0 32 28"><rect x="1" y="4" width="13" height="20" rx="2" fill="currentColor" opacity="0.3" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  },
+  {
+    value: 'medium', label: 'Mittel',
+    svg: <svg width="32" height="28" viewBox="0 0 32 28"><rect x="1" y="9" width="30" height="10" rx="2" fill="currentColor" opacity="0.3" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  },
+  {
+    value: 'large',  label: 'Groß',
+    svg: <svg width="32" height="28" viewBox="0 0 32 28"><rect x="1" y="1" width="30" height="26" rx="2" fill="currentColor" opacity="0.3" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  },
 ]
 
 const fieldCls = `w-full px-3 py-[10px] rounded-[10px] font-sans text-[14px] text-gray-900
@@ -53,8 +63,8 @@ const Label = ({ children }: { children: React.ReactNode }) => (
   </label>
 )
 
-function storagePath(bookId: string, memoryId: string) {
-  return `${bookId}/${memoryId}.jpg`
+function storagePathNew(bookId: string, memoryId: string) {
+  return `${bookId}/${memoryId}_${Date.now()}.jpg`
 }
 
 export default function EditSheet({ memory, onClose, onSaved, onDeleted, bookId = DEMO_BOOK_ID }: Props) {
@@ -175,28 +185,63 @@ export default function EditSheet({ memory, onClose, onSaved, onDeleted, bookId 
     try {
       let fotoUrl: string | null | undefined = undefined // undefined = no change
 
-      // Upload new photo
+      // Upload new photo — unique path so browser doesn't cache old image
       if (pendingBlob) {
-        const path = storagePath(BOOK_ID, memory.id)
+        const newPath = storagePathNew(BOOK_ID, memory.id)
+        // Delete old photo first
+        if (existingUrl) {
+          const oldPath = new URL(existingUrl).pathname.split('/memories-photos/')[1]
+          if (oldPath) await supabase.storage.from('memories-photos').remove([oldPath])
+        }
         const { error: upErr } = await supabase.storage
           .from('memories-photos')
-          .upload(path, pendingBlob, { upsert: true, contentType: 'image/jpeg' })
+          .upload(newPath, pendingBlob, { upsert: false, contentType: 'image/jpeg' })
         if (upErr) throw new Error('Foto-Upload: ' + upErr.message)
 
-        const { data } = supabase.storage.from('memories-photos').getPublicUrl(path)
-        fotoUrl = data.publicUrl
+        const { data } = supabase.storage.from('memories-photos').getPublicUrl(newPath)
+        fotoUrl = `${data.publicUrl}?t=${Date.now()}`
       }
 
       // Delete photo
       if (pendingDelete && !pendingBlob) {
-        await supabase.storage.from('memories-photos').remove([storagePath(BOOK_ID, memory.id)])
+        if (existingUrl) {
+          const oldPath = new URL(existingUrl).pathname.split('/memories-photos/')[1]
+          if (oldPath) await supabase.storage.from('memories-photos').remove([oldPath])
+        }
         fotoUrl = null
+      }
+
+      // Parse datum text → structured fields for correct sorting
+      let datumJahr:  number | null = null
+      let datumMonat: number | null = null
+      let datumTag:   number | null = null
+      let datumLabel: string | null = datum || null
+
+      if (datum.trim()) {
+        try {
+          const parsed = await parseDateText(datum.trim())
+          if (!parsed.datum_jahr) {
+            // Fix 4: Jahr fehlt → Fehlermeldung, nicht speichern
+            setToast('Bitte mindestens ein Jahr im Datum angeben — z.B. 1958')
+            setSaving(false)
+            return
+          }
+          datumJahr  = parsed.datum_jahr
+          datumMonat = parsed.datum_monat
+          datumTag   = parsed.datum_tag
+          datumLabel = parsed.datum_text || datum.trim()
+        } catch {
+          // API-Fehler: nur Label speichern, Sortierung bleibt
+        }
       }
 
       const update: Record<string, unknown> = {
         title:           titel        || null,
         body:            beschreibung || null,
-        datum_label:     datum        || null,
+        datum_label:     datumLabel,
+        datum_jahr:      datumJahr,
+        datum_monat:     datumMonat,
+        datum_tag:       datumTag,
         kategorie,
         icon,
         card_color:      cardColor,
@@ -220,7 +265,11 @@ export default function EditSheet({ memory, onClose, onSaved, onDeleted, bookId 
   async function handleDelete() {
     if (!memory) return
     // Also remove photo from storage
-    await supabase.storage.from('memories-photos').remove([storagePath(BOOK_ID, memory.id)])
+    // Remove photo if URL known
+    if (existingUrl) {
+      const p = new URL(existingUrl).pathname.split('/memories-photos/')[1]
+      if (p) await supabase.storage.from('memories-photos').remove([p])
+    }
     const { error } = await supabase.from('memories').delete().eq('id', memory.id)
     if (error) { setToast('Fehler: ' + error.message); return }
     onDeleted()
@@ -431,11 +480,11 @@ export default function EditSheet({ memory, onClose, onSaved, onDeleted, bookId 
                     key={s.value}
                     type="button"
                     onClick={() => setCardSize(s.value)}
-                    className="flex-1 flex flex-col items-center py-2 rounded-[10px] transition-colors"
-                    style={{ backgroundColor: active ? '#000' : '#F2F2F7', color: active ? '#fff' : '#555' }}
+                    className="flex-1 flex flex-col items-center gap-1.5 transition-colors"
+                    style={{ backgroundColor: active ? '#000' : '#F2F2F7', color: active ? '#fff' : '#707070', borderRadius: 12, padding: '12px 8px' }}
                   >
-                    <span className="font-sans font-semibold text-[13px]">{s.label}</span>
-                    <span className="font-sans text-[10px] opacity-60">{s.sub}</span>
+                    {s.svg}
+                    <span className="font-sans text-[12px] font-medium">{s.label}</span>
                   </button>
                 )
               })}
