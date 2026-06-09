@@ -89,3 +89,35 @@ export async function resizeProfileImage(file: File): Promise<Blob> {
     img.src = url
   })
 }
+
+/** Resize a user-account avatar to 400×400 px, center-cropped, JPEG 0.85.
+ *  Only this reduced blob is uploaded — the original never leaves the browser. */
+export async function resizeAvatarImage(file: File): Promise<Blob> {
+  const SIZE    = 400
+  const QUALITY = 0.85
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bild konnte nicht geladen werden')) }
+    img.onload  = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width  = SIZE
+      canvas.height = SIZE
+      const ctx    = canvas.getContext('2d')!
+      const minDim = Math.min(img.width, img.height)
+      const sx     = (img.width  - minDim) / 2
+      const sy     = (img.height - minDim) / 2   // true center crop
+      ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, SIZE, SIZE)
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(url)
+          if (!blob) { reject(new Error('Canvas toBlob fehlgeschlagen')); return }
+          resolve(blob)
+        },
+        'image/jpeg',
+        QUALITY,
+      )
+    }
+    img.src = url
+  })
+}

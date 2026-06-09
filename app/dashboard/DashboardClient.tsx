@@ -25,8 +25,11 @@ interface Project {
 }
 
 interface Profile {
-  vorname?: string
-  nachname?: string
+  vorname?:     string
+  nachname?:    string
+  anzeigename?: string
+  avatar_url?:  string
+  updated_at?:  string
 }
 
 interface Props {
@@ -131,7 +134,12 @@ function ProjectCard({ project: p, onTap, onLongPress }: {
 
 export default function DashboardClient({ user, projects: initialProjects, profile }: Props) {
   const router    = useRouter()
-  const firstName = profile?.vorname ?? user.email?.split('@')[0] ?? ''
+  // Greeting name: anzeigename → vorname → email prefix
+  const firstName =
+    profile?.anzeigename?.trim() ||
+    profile?.vorname?.trim() ||
+    user.email?.split('@')[0] ||
+    ''
   const [projects,       setProjects]       = useState(initialProjects)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [toast,          setToast]          = useState<string | null>(null)
@@ -161,8 +169,20 @@ export default function DashboardClient({ user, projects: initialProjects, profi
           <Logo variant="text" height={30} />
         </div>
 
-        <Link href="/konto" className="w-9 h-9 rounded-full bg-gray-900 text-white font-sans font-semibold text-[13px] flex items-center justify-center active:opacity-70">
-          {initials(user.email ?? '', profile)}
+        <Link href="/konto" className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 active:opacity-70 block">
+          {profile?.avatar_url ? (
+            // Cache-bust with updated_at so a new avatar shows immediately
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`${profile.avatar_url}${profile.avatar_url.includes('?') ? '&' : '?'}cb=${profile.updated_at ?? ''}`}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="w-full h-full rounded-full bg-gray-900 text-white font-sans font-semibold text-[13px] flex items-center justify-center">
+              {initials(user.email ?? '', profile)}
+            </span>
+          )}
         </Link>
       </header>
 
