@@ -32,13 +32,14 @@ export function useAlbums(bookId: string) {
       // 1. Fetch albums
       const { data: albumRows, error: albumErr } = await supabase
         .from('albums')
-        .select('id, titel, datum_text, datum_jahr, datum_monat, datum_tag, cover_url, sortierung')
+        .select('id, titel, datum_text, datum_jahr, datum_monat, datum_tag, cover_url, sortierung, created_at')
         .eq('book_id', bookId)
         .order('datum_jahr', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: true })
 
       if (cancelled) return
-      if (albumErr) { setError(albumErr.message); setLoading(false); return }
+      if (albumErr) { console.error('[useAlbums] albums query error:', albumErr); setError(albumErr.message); setLoading(false); return }
+      console.log('[useAlbums] albumRows:', albumRows?.length, albumRows)
       if (!albumRows || albumRows.length === 0) { setAlbums([]); setLoading(false); return }
 
       // 2. Fetch photos for all albums in one query
