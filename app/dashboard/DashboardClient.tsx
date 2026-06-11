@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import Logo from '@/components/Logo'
 import ProjectEditSheet from '@/components/ProjectEditSheet'
+import OnboardingScreen from '@/components/OnboardingScreen'
 
 interface Project {
   id:                  string
@@ -149,11 +150,12 @@ function ProjectCard({ project: p, onTap, onLongPress }: {
 
 export default function DashboardClient({ user, projects: initialProjects, profile }: Props) {
   const router    = useRouter()
-  // Greeting name: anzeigename → vorname → email prefix
+  // Onboarding: zeigen wenn kein Vorname gesetzt (neuer Nutzer)
+  const [showOnboarding, setShowOnboarding] = useState(!profile?.vorname?.trim())
+  // Greeting name: anzeigename → vorname → leer (kein E-Mail-Prefix mehr)
   const firstName =
     profile?.anzeigename?.trim() ||
     profile?.vorname?.trim() ||
-    user.email?.split('@')[0] ||
     ''
   const [projects,       setProjects]       = useState(initialProjects)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
@@ -173,6 +175,16 @@ export default function DashboardClient({ user, projects: initialProjects, profi
   async function handleLogout() {
     await supabase.auth.signOut()
     window.location.href = '/'
+  }
+
+  // ── Onboarding für neue Nutzer (kein Vorname gesetzt) ────────────────────
+  if (showOnboarding) {
+    return (
+      <OnboardingScreen
+        user={user}
+        onDone={() => window.location.href = '/dashboard'}
+      />
+    )
   }
 
   return (

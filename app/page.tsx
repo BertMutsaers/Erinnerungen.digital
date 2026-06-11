@@ -69,7 +69,7 @@ export default async function HomePage() {
         </p>
 
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Link href="/auth"
+          <Link href="/auth?tab=register"
             style={{ padding: '14px 32px', borderRadius: 100, background: '#000', color: '#fff', fontSize: 16, fontWeight: 500, textDecoration: 'none' }}>
             Kostenlos starten
           </Link>
@@ -195,7 +195,7 @@ export default async function HomePage() {
         }}>
           Welche Geschichte wartet darauf<br />erzählt zu werden?
         </h2>
-        <Link href="/auth"
+        <Link href="/auth?tab=register"
           style={{ display: 'inline-block', marginTop: 44, padding: '16px 40px', borderRadius: 100, background: '#fff', color: '#000', fontSize: 17, fontWeight: 600, textDecoration: 'none' }}>
           Jetzt kostenlos starten
         </Link>

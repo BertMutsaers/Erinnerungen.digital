@@ -15,9 +15,10 @@ const RESEND_COOLDOWN_S = 60
 function AuthForm() {
   const searchParams = useSearchParams()
   const redirectTo   = searchParams.get('redirect') ?? '/dashboard'
+  const initialTab   = searchParams.get('tab') === 'register' ? 'register' : 'login'
 
   type Tab = 'login' | 'register' | 'forgot' | 'confirmed'
-  const [tab,       setTab]       = useState<Tab>('login')
+  const [tab,       setTab]       = useState<Tab>(initialTab)
   const [email,     setEmail]     = useState('')
   const [password,  setPassword]  = useState('')
   const [password2, setPassword2] = useState('')
