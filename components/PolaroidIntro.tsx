@@ -12,6 +12,7 @@ interface Props {
   onUploaded: (url: string) => void
   onRemoved:  () => void
   onToast:    (msg: string) => void
+  readOnly?:  boolean
 }
 
 function getInitials(name: string) {
@@ -19,7 +20,7 @@ function getInitials(name: string) {
 }
 
 export default function PolaroidIntro({
-  coverUrl, name, years, bookId, onUploaded, onRemoved, onToast,
+  coverUrl, name, years, bookId, onUploaded, onRemoved, onToast, readOnly = false,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -166,10 +167,10 @@ export default function PolaroidIntro({
         {/* ── Polaroid frame ─────────────────────────────────────────── */}
         <div style={{ position: 'relative', width: '88vw', maxWidth: 380 }}>
           <div
-            onPointerDown={onPointerDown}
-            onPointerUp={() => cancelPress()}
-            onPointerLeave={() => cancelPress()}
-            onPointerCancel={() => cancelPress()}
+            onPointerDown={readOnly ? undefined : onPointerDown}
+            onPointerUp={readOnly ? undefined : () => cancelPress()}
+            onPointerLeave={readOnly ? undefined : () => cancelPress()}
+            onPointerCancel={readOnly ? undefined : () => cancelPress()}
             style={{
               background: '#FFFFFF',
               padding:    '16px 16px 52px 16px',
@@ -256,9 +257,9 @@ export default function PolaroidIntro({
         <div className="absolute bottom-8 animate-bounce" style={{ color: 'rgba(0,0,0,0.25)', fontSize: 20 }}>↓</div>
       </div>
 
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      {!readOnly && <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />}
 
-      {showSheet && (
+      {!readOnly && showSheet && (
         <>
           <div className="fixed inset-0 bg-black/30 z-40 backdrop-blur-sm" onClick={() => setShowSheet(false)} />
           <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-[430px] pb-4 px-4">

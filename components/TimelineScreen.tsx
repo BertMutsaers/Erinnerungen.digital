@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMemories } from '@/hooks/useMemories'
 import { usePerson } from '@/hooks/usePerson'
@@ -15,6 +15,8 @@ import { TimelineSkeleton } from './MemoryCardSkeleton'
 import ScrollIndicator from './ScrollIndicator'
 import NavSpacer from './NavSpacer'
 import PolaroidIntro from './PolaroidIntro'
+import type { ExtractResult } from '@/app/api/extract-rohtext/route'
+import KiReviewScreen from './KiReviewScreen'
 
 const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
@@ -52,6 +54,9 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
   const [newMemoryOpen,setNewMemoryOpen]= useState(false)
   const [groupingMode, setGroupingMode] = useState<GroupingMode>('phase')
   const [showGrouping, setShowGrouping] = useState(false)
+  const [kiLoading,    setKiLoading]    = useState(false)
+  const [kiResult,     setKiResult]     = useState<ExtractResult | null>(null)
+  const [kiError,      setKiError]      = useState<string | null>(null)
 
   const lsKey = `grouping-${BOOK_ID}`
 
@@ -89,6 +94,47 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
   function showToast(msg: string) {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
+  }
+
+  const analyzeRohtext = useCallback(async () => {
+    if (!person?.id) return
+    setKiLoading(true)
+    setKiError(null)
+    setKiResult(null)
+    try {
+      const res = await fetch('/api/extract-rohtext', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ projectId: person.id }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error ?? `HTTP ${res.status}`)
+      }
+      setKiResult(await res.json())
+    } catch (e) {
+      setKiError(String(e))
+    } finally {
+      setKiLoading(false)
+    }
+  }, [person?.id])
+
+  // ── Etappe C/D: Review-Screen (overlay, solange kiResult gesetzt ist) ───────
+  if (kiResult) {
+    return (
+      <KiReviewScreen
+        result={kiResult}
+        projectId={BOOK_ID}
+        onDiscard={() => { setKiResult(null); setKiError(null) }}
+        onSaved={() => {
+          // Gespeichert: Review-Screen schließen, Zeitstrahl + Person neu laden
+          setKiResult(null)
+          setKiError(null)
+          reload()        // memories neu laden → Zeitstrahl füllt sich
+          reloadPerson()  // Stammdaten neu laden (Geburt/Tod/Orte jetzt gesetzt)
+        }}
+      />
+    )
   }
 
   return (
@@ -179,7 +225,7 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
 
       {loading ? <TimelineSkeleton /> : phases.length === 0 ? (
         /* ── Empty state ──────────────────────────────────────────────── */
-        <div className="px-8 py-12 flex flex-col items-center text-center gap-3">
+        <div className="px-6 py-10 flex flex-col items-center text-center gap-3">
           <p className="font-serif text-[22px] font-bold text-gray-900 leading-snug">
             Noch keine Ereignisse.
           </p>
@@ -189,6 +235,39 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
           {!person?.coverUrl && !localCoverUrl && (
             <p className="font-sans text-[13px] mt-2 leading-relaxed" style={{ color: '#B0B0B0', maxWidth: 260 }}>
               Tippe auf das Polaroid oben, um ein Profilfoto hinzuzufügen.
+            </p>
+          )}
+
+          {/* ── KI-Analyse-Button (nur wenn rohtext vorhanden und nicht readOnly) ── */}
+          {person?.rohtext && !readOnly && !kiResult && (
+            <div className="mt-5 w-full max-w-[320px]">
+              <button
+                onClick={analyzeRohtext}
+                disabled={kiLoading}
+                className="w-full py-3.5 px-5 rounded-[14px] font-sans text-[15px] font-semibold flex items-center justify-center gap-2 active:opacity-70 disabled:opacity-40 transition-opacity"
+                style={{ background: '#1C1C1E', color: '#fff' }}
+              >
+                {kiLoading ? (
+                  <>
+                    <span className="animate-spin inline-block text-[16px]">⏳</span>
+                    <span>Text wird analysiert …</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✨</span>
+                    <span>Zeitstrahl aus Text erstellen</span>
+                  </>
+                )}
+              </button>
+              <p className="font-sans text-[11px] mt-2 leading-relaxed" style={{ color: '#AEAEB2' }}>
+                KI extrahiert Ereignisse aus deinem Text. Nichts wird gespeichert.
+              </p>
+            </div>
+          )}
+
+          {kiError && (
+            <p className="font-sans text-[13px] mt-2" style={{ color: '#FF3B30', maxWidth: 280 }}>
+              ⚠ {kiError}
             </p>
           )}
         </div>

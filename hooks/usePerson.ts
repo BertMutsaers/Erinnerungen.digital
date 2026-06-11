@@ -8,6 +8,7 @@ export interface Person {
   title: string
   description?: string
   coverUrl?: string
+  rohtext?: string       // raw free-text for KI extraction (Etappe B+)
   // Date fields
   geburtsdatumText?: string
   geburtsdatumJahr?: number
@@ -45,7 +46,7 @@ export function usePerson(bookId: string): UsePersonResult {
         const projectId = data.project_id
         if (projectId) {
           supabase.from('projects').select(
-            'geburtsdatum_text, geburtsdatum_jahr, geburtsort, sterbedatum_text, sterbedatum_jahr, sterbeort'
+            'geburtsdatum_text, geburtsdatum_jahr, geburtsort, sterbedatum_text, sterbedatum_jahr, sterbeort, rohtext'
           ).eq('id', projectId).single().then(({ data: proj }) => {
             if (cancelled) return
             setPerson({
@@ -53,6 +54,7 @@ export function usePerson(bookId: string): UsePersonResult {
               title:       data.title,
               description: data.description    ?? undefined,
               coverUrl:    data.cover_url      ?? undefined,
+              rohtext:          proj?.rohtext            ?? undefined,
               geburtsdatumText: proj?.geburtsdatum_text ?? undefined,
               geburtsdatumJahr: proj?.geburtsdatum_jahr ?? undefined,
               geburtsort:       proj?.geburtsort        ?? undefined,
