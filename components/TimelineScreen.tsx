@@ -177,7 +177,22 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
       {/* ── Content ──────────────────────────────────────────────────── */}
       {error && <p className="px-4 text-sm text-red-500 font-sans">{error}</p>}
 
-      {loading ? <TimelineSkeleton /> : (
+      {loading ? <TimelineSkeleton /> : phases.length === 0 ? (
+        /* ── Empty state ──────────────────────────────────────────────── */
+        <div className="px-8 py-12 flex flex-col items-center text-center gap-3">
+          <p className="font-serif text-[22px] font-bold text-gray-900 leading-snug">
+            Noch keine Ereignisse.
+          </p>
+          <p className="font-sans text-[14px] leading-relaxed" style={{ color: '#9B9B9B', maxWidth: 280 }}>
+            Tippe auf <strong style={{ color: '#3C3C3E' }}>⊕</strong> unten rechts, um das erste Ereignis im Leben dieser Person hinzuzufügen.
+          </p>
+          {!person?.coverUrl && !localCoverUrl && (
+            <p className="font-sans text-[13px] mt-2 leading-relaxed" style={{ color: '#B0B0B0', maxWidth: 260 }}>
+              Tippe auf das Polaroid oben, um ein Profilfoto hinzuzufügen.
+            </p>
+          )}
+        </div>
+      ) : (
         <div className="flex flex-col px-4">
           {phases.map((phase, phaseIdx) => (
             <section key={phase.key} style={{ marginTop: phaseIdx === 0 ? 8 : 24 }}>
