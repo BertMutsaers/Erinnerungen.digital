@@ -8,10 +8,11 @@ import { Album } from '@/hooks/useAlbums'
 interface Props {
   album:       Album
   onLongPress: (a: Album) => void
-  basePath?:  string
+  basePath?:   string
+  onTap?:      (a: Album) => void   // override default navigation
 }
 
-export default function AlbumCard({ album, onLongPress, basePath = '' }: Props) {
+export default function AlbumCard({ album, onLongPress, basePath = '', onTap }: Props) {
   const router  = useRouter()
   const [pressed, setPressed] = useState(false)
   const longTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -32,6 +33,7 @@ export default function AlbumCard({ album, onLongPress, basePath = '' }: Props) 
     if (!tapStarted.current) return
     tapStarted.current = false
     setPressed(false)
+    if (onTap) { onTap(album); return }
     router.push(`/albums/${album.id}?from=${encodeURIComponent(basePath + '/media')}`)
   }
 
