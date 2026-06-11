@@ -99,7 +99,8 @@ export default function NeuesProjektPage() {
 
     const projectId = data.id
 
-    // Upload photo if provided
+    // Upload photo if provided — capture coverUrl for the books insert below
+    let coverUrl: string | null = null
     if (pendingBlob) {
       const path = `${projectId}/profile.jpg`
       const { error: upErr } = await supabase.storage
@@ -107,15 +108,15 @@ export default function NeuesProjektPage() {
         .upload(path, pendingBlob, { upsert: true, contentType: 'image/jpeg' })
       if (!upErr) {
         const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(path)
-        const coverUrl = `${urlData.publicUrl}?t=${Date.now()}`
+        coverUrl = `${urlData.publicUrl}?t=${Date.now()}`
         await supabase.from('projects').update({ cover_url: coverUrl }).eq('id', projectId)
-        await supabase.from('books').upsert({ cover_url: coverUrl }, { onConflict: 'id' }).eq('id', projectId)
       }
     }
 
-    // Create books record
+    // Create books record — include cover_url so Polaroid reads it immediately
     const { error: bookErr } = await supabase.from('books').insert({
-      id: projectId, owner_id: user.id, title: payload.titel as string, project_id: projectId,
+      id: projectId, owner_id: user.id, title: payload.titel as string,
+      project_id: projectId, cover_url: coverUrl,
     })
     if (bookErr) console.error('Book insert failed:', bookErr.message)
 

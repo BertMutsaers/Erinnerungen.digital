@@ -145,7 +145,7 @@ export default function PolaroidIntro({
         {/* ── Phase 1 & 2: Camera (fixed at viewport top) ────────────── */}
         {cameraPhase !== 'done' && (
           <img
-            src="/polaroid-kamera.png"
+            src="/polaroid-kamera2.png"
             alt=""
             style={{
               position:   'fixed',
