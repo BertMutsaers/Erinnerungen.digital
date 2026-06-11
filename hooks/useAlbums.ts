@@ -29,6 +29,8 @@ export function useAlbums(bookId: string) {
     // Two separate queries — avoids the PostgREST embedded-join schema-cache issue
     // that caused albums to silently disappear when the FK cache was stale.
     async function load() {
+      console.log('[useAlbums] load() called, bookId:', bookId)
+      try {
       // 1. Fetch albums
       const { data: albumRows, error: albumErr } = await supabase
         .from('albums')
@@ -77,6 +79,10 @@ export function useAlbums(bookId: string) {
         }
       }))
       setLoading(false)
+      } catch (e) {
+        console.error('[useAlbums] unexpected exception:', e)
+        if (!cancelled) setLoading(false)
+      }
     }
 
     load()
