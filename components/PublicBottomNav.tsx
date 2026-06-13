@@ -78,14 +78,22 @@ export default function PublicBottomNav({ token, showGalerieTab }: Props) {
           )}
 
           {TABS.map((tab) => {
-            const active = pathname === tab.href ||
-              (tab.href !== base && pathname.startsWith(tab.href))
+            // Pfad ohne ?ref=… vergleichen; Zeitstrahl (base) auch auf Ereignis-Detailseiten aktiv
+            const hrefPath = tab.href.split('?')[0]
+            const active = hrefPath === base
+              ? (pathname === base || pathname.startsWith(`${base}/ereignis`))
+              : pathname.startsWith(hrefPath)
             return (
               <Link key={tab.href} href={tab.href}
-                className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 font-sans transition-colors
-                  ${active ? 'text-gray-900' : 'text-[#707070]'}`}>
-                {tab.icon}
-                <span className={`text-[10px] ${active ? 'font-bold' : 'font-medium'}`}>
+                className="flex-1 flex flex-col items-center gap-1 py-2 font-sans">
+                <span
+                  className={`flex items-center justify-center rounded-full transition-colors duration-200
+                    ${active ? 'bg-[#1C1C1E] text-white' : 'text-[#707070]'}`}
+                  style={{ width: 46, height: 30 }}>
+                  {tab.icon}
+                </span>
+                <span className={`text-[10px] transition-colors
+                  ${active ? 'text-gray-900 font-bold' : 'text-[#707070] font-medium'}`}>
                   {tab.label}
                 </span>
               </Link>
