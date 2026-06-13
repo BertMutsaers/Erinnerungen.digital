@@ -62,9 +62,8 @@ Verwendung auf der Landing-Page:
 ```
 /            (Landing-Page)
 /auth/*      (Login, Register, Reset, Callback)
-/demo/*      (Demo-Modus)
 /teilen/*    (Öffentliche EB-Freigabe per Token)
-/projekte/c0000000*  (Legacy-Demo-Route)
+/galerie/*   (Öffentliche Galerie freigegebener EB)
 ```
 Alle anderen Routen → Redirect zu `/auth?redirect=<ursprünglicher-Pfad>`.
 
@@ -149,6 +148,9 @@ Route: `/teilen/[token]/*` — Zeitstrahl, Geschichten, Ereignisse, Medien, Albe
 - iOS-Toggle: „Öffentlich über privaten Link" → setzt `share_active`
 - Token wird beim ersten Aktivieren generiert, beim Deaktivieren **nicht gelöscht** (Token bleibt → Re-Aktivierung stellt denselben Link wieder her)
 - „Link kopieren"-Button (nur sichtbar wenn aktiv), Clipboard-Fallback für HTTP
+- Toggle „In öffentlicher Galerie zeigen" → `in_galerie` (nur sichtbar wenn geteilt)
+- Toggle „Zeitgeschehen anzeigen" → `show_zeitgeschehen`; blendet den historischen Kontext (`memories.body_extra`) ein/aus, ohne die Daten zu löschen
+- Segmented Control „Zeitstrahl gruppieren nach" (Lebensphase / Jahrzehnt / Keine) — persistiert in `localStorage` (`grouping-{bookId}`)
 
 ### Dashboard-Kennzeichen
 Globus-Icon auf EB-Karte wenn `share_active = true`.
@@ -158,8 +160,12 @@ Globus-Icon auf EB-Karte wenn `share_active = true`.
 - `POST /api/share` — Actions: `enable`, `disable`, `create`, `regenerate`
 - `DELETE /api/share` — Token löschen
 
-### Abgrenzung
-Eine separate öffentliche **Galerie** (Suche, Entdecken) ist **nicht** Teil dieser Funktion — eigenes späteres Feature mit eigenem Schalter.
+### Öffentliche Galerie
+Zweiter, unabhängiger Schalter `in_galerie` (zusätzlich zu `share_active`). Ist beides aktiv, erscheint das EB unter `/galerie`.
+- Anonymer Zugriff ausschließlich über die SECURITY DEFINER-RPC `get_galerie_entries()` (liefert nur `in_galerie = true` **und** `share_active = true`; keine privaten Felder).
+- Wird `share_active` deaktiviert, setzt ein DB-Trigger `in_galerie` automatisch zurück.
+- Karten-Komponente: `components/GalerieCard.tsx` (auch in der Startseiten-Vorschau wiederverwendet).
+- Sortierung: Startseiten-Vorschau zeigt die **vier ältesten** (`created_at` aufsteigend), die `/galerie`-Seite die **neuesten zuerst**.
 
 ---
 
@@ -228,7 +234,7 @@ Mapping Ereignis → Memory:
 ## 5. Design & UI
 
 ### Designsystem
-- **Monochrom** (Schwarz/Weiß/Grau), Akzent: keine Farben außer Fehler-Rot
+- Überwiegend **monochrom** (Schwarz/Weiß/Grau); Ereignis-Karten unterstützen 6 dezente Farben über `card_color`: `schwarz`, `gold`, `rose`, `blau`, `weiss`, `gruen` (Definition in `lib/types.ts`, Auswahl in `components/EditSheet.tsx`). Geburts-Ereignisse werden automatisch `gruen` eingefärbt (`lib/planGridLayout.ts`).
 - **Playfair Display** für Überschriften, System-Sans für Fließtext
 - max-width `430px` (Mobile-First), Cards mit `rounded-[16px]`, `bg-[#F2F2F7]` als Seiten-BG
 
@@ -247,15 +253,18 @@ Mapping Ereignis → Memory:
 
 ## 6. Datenbankstruktur (Übersicht)
 
-Migrationen: `supabase/migration_001.sql` bis `migration_027.sql`.
+Migrationen: `supabase/migration_001.sql` bis `migration_033.sql`. Auswahl neuerer:
+`028` (öffentliche Galerie: `in_galerie`, Trigger, RPC `get_galerie_entries`),
+`029` (Kartenfarbe `gruen`), `030` (`show_zeitgeschehen`), `031` (Demo-Daten gelöscht),
+`032` (`created_at` in Galerie-RPC), `033` (Demo-Policies + `ist_demo` entfernt).
 
 ### Wichtige Tabellen
 | Tabelle | Zweck |
 |---|---|
 | `profiles` | Nutzerprofil (vorname, nachname, anzeigename, avatar_url) |
-| `projects` | Erinnerungsbuch-Metadaten (titel, typ, cover_url, rohtext, share_token, share_active, Stammdaten) |
+| `projects` | Erinnerungsbuch-Metadaten (titel, typ, cover_url, rohtext, share_token, share_active, `in_galerie`, `show_zeitgeschehen`, Stammdaten) |
 | `books` | Verknüpfung Nutzer ↔ Projekt (id = project_id), title, description, cover_url |
-| `memories` | Zeitstrahl-Einträge (title, body, datum_*, kategorie, card_size, icon) |
+| `memories` | Zeitstrahl-Einträge (title, body, `body_extra` = Zeitgeschehen, datum_*, kategorie, card_size, `card_color`, icon) |
 | `stories` | Geschichten/Texte zu einem EB |
 | `media` | Fotos/Videos (url, album_id, book_id) |
 | `albums` | Fotoalben (titel, datum_*, cover_url, book_id) |
@@ -288,7 +297,6 @@ Migrationen: `supabase/migration_001.sql` bis `migration_027.sql`.
 | **SMTP** ⚠️ | Vor Live-Gang eigenen Mail-Dienst in Supabase eintragen (Resend / Postmark / SendGrid). Aktuell nur Test-Rate-Limit. |
 | **Frischer Account testen** | Passwort-Reset, Registrierung + Onboarding-Durchlauf mit echtem Account (sobald Mail-Limit frei). |
 | **Supabase Redirect-URLs** | Produktions-Domain eintragen: `https://<domain>/auth/callback` und `https://<domain>/**`. Aktuell nur `localhost:3000`. |
-| **Öffentliche Galerie** | Separates Feature (Entdecken/Suche) — noch nicht begonnen. Eigener Schalter, unabhängig vom privaten Teilen-Link. |
 | **Deployment** | Vercel geplant, noch nicht eingerichtet. |
 
 ---

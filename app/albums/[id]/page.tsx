@@ -232,6 +232,7 @@ function AlbumDetailInner() {
 
       <AlbumPhotoEditSheet
         photo={editingPhoto}
+        bookId={bookId}
         albumDate={album?.datumText ?? (album?.datumJahr ? String(album.datumJahr) : undefined)}
         onClose={() => setEditingPhoto(null)}
         onSaved={() => { setEditingPhoto(null); load() }}

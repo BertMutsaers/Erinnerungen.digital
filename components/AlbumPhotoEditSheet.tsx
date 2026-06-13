@@ -9,6 +9,7 @@ import { parseDateText } from '@/lib/parseDate'
 
 interface Props {
   photo:      MediaItem | null
+  bookId:     string
   albumDate?: string        // album's datum_text for the hint
   onClose:    () => void
   onSaved:    () => void
@@ -18,7 +19,7 @@ interface Props {
 const fieldCls = `w-full px-3 py-[10px] rounded-[10px] font-sans text-[14px] text-gray-900
   bg-[#F2F2F7] outline-none border border-[rgba(0,0,0,0.06)] placeholder-gray-400 focus:border-gray-400`
 
-export default function AlbumPhotoEditSheet({ photo, albumDate, onClose, onSaved, onRemoved }: Props) {
+export default function AlbumPhotoEditSheet({ photo, bookId, albumDate, onClose, onSaved, onRemoved }: Props) {
   const open = photo !== null
 
   const [titel,        setTitel]        = useState('')
@@ -73,7 +74,7 @@ export default function AlbumPhotoEditSheet({ photo, albumDate, onClose, onSaved
       let storagePath = photo.storagePath
 
       if (pendingBlob) {
-        const path = photo.storagePath ?? `a1b2c3d4-0000-0000-0000-000000000001/foto/${Date.now()}.jpg`
+        const path = photo.storagePath ?? `${bookId}/foto/${Date.now()}.jpg`
         await supabase.storage.from('media-files').upload(path, pendingBlob, { upsert: true, contentType: 'image/jpeg' })
         const { data } = supabase.storage.from('media-files').getPublicUrl(path)
         fotoUrl = data.publicUrl

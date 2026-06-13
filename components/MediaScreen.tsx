@@ -350,7 +350,7 @@ export default function MediaScreen({ bookId: bookIdProp, basePath = '' }: Media
     <main className="mx-auto w-full max-w-[430px] min-h-screen bg-[#F2F2F7]">
       {/* Header */}
       <header className="px-4 pt-10 pb-3">
-        <h1 className="font-serif text-[30px] font-bold text-gray-900">{person?.title ?? 'Piet Mutsaers'}</h1>
+        <h1 className="font-serif text-[30px] font-bold text-gray-900">{person?.title ?? ''}</h1>
         <p className="font-sans text-[13px] text-gray-400 mt-0.5">Media</p>
       </header>
 

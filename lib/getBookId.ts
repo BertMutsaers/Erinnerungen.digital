@@ -1,7 +1,7 @@
 /**
  * Resolves the book_id for a given project_id.
- * For new projects: project_id == book_id (created with same UUID).
- * For legacy data (Piet demo): book_id is different — look it up.
+ * For new projects project_id == book_id (created with same UUID);
+ * the lookup is a fallback for any data where they differ.
  */
 import { createSupabaseServer } from './supabase-server'
 

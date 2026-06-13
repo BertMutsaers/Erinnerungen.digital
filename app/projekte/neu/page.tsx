@@ -177,7 +177,7 @@ export default function NeuesProjektPage() {
                     </label>
                     <input
                       type="text" value={vorname} onChange={(e) => setVorname(e.target.value)}
-                      placeholder="z.B. Piet" className={inputCls}
+                      placeholder="z.B. Anna" className={inputCls}
                       style={submitted && !vorname.trim() ? { borderColor: '#FF3B30' } : {}}
                     />
                   </div>

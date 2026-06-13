@@ -328,7 +328,7 @@ export default function TimelineScreen({ bookId, basePath = '', readOnly = false
       <NavSpacer />
       <BottomNav
         basePath={basePath}
-        zeitstrahlSuffix={basePath === '/demo' ? '' : '/zeitstrahl'}
+        zeitstrahlSuffix="/zeitstrahl"
       />
 
       <ProjectEditSheet
