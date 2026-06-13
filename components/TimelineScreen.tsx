@@ -20,8 +20,6 @@ import KiReviewScreen from './KiReviewScreen'
 import ProjectEditSheet from './ProjectEditSheet'
 import { supabase } from '@/lib/supabase'
 
-const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
-
 import type { Person } from '@/hooks/usePerson'
 
 function formatLifespan(p: Person): string {
@@ -38,9 +36,9 @@ function formatLifespan(p: Person): string {
   return ''
 }
 
-interface Props { bookId?: string; basePath?: string; readOnly?: boolean }
+interface Props { bookId: string; basePath?: string; readOnly?: boolean }
 
-export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', readOnly = false }: Props) {
+export default function TimelineScreen({ bookId, basePath = '', readOnly = false }: Props) {
   const BOOK_ID = bookId
   const router = useRouter()
   const [filter,       setFilter]       = useState('alle')
@@ -62,7 +60,7 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
     try {
       const saved = localStorage.getItem(lsKey) as GroupingMode | null
       if (saved && ['phase','decade','none'].includes(saved)) setGroupingMode(saved)
-      else if (BOOK_ID !== DEMO_BOOK_ID) setGroupingMode('none')
+      else setGroupingMode('none')
     } catch { /* ignore */ }
   }, [BOOK_ID, lsKey])
 

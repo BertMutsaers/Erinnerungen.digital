@@ -18,8 +18,6 @@ import BottomNav from '@/components/BottomNav'
 import NavSpacer from '@/components/NavSpacer'
 import { useAlbums, Album } from '@/hooks/useAlbums'
 
-const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
-
 type FilterKey = 'alle' | MediaType
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: 'alle',       label: 'Alle'       },
@@ -182,10 +180,10 @@ function FileUploadForm({ file, typ, previewUrl, onSave, onClose }: FileFormProp
   )
 }
 
-interface MediaScreenProps { bookId?: string; basePath?: string }
+interface MediaScreenProps { bookId: string; basePath?: string }
 
 export default function MediaScreen({ bookId: bookIdProp, basePath = '' }: MediaScreenProps) {
-  const BOOK_ID = bookIdProp ?? DEMO_BOOK_ID
+  const BOOK_ID = bookIdProp
   const { person }   = usePerson(BOOK_ID)
   const [editing,      setEditing]      = useState<MediaItem | null>(null)
   const [playingVideo, setPlayingVideo] = useState<MediaItem | null>(null)

@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { AnalyzeEntry } from '@/app/api/analyze-memory/route'
 
-const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
 const THIS_YEAR = new Date().getFullYear()
 const YEAR_RE   = /\b(18|19|20)\d{2}\b/
@@ -48,7 +47,7 @@ async function analyzeChunk(freitext: string): Promise<AnalyzeEntry[]> {
   return res.json()
 }
 
-export default function NewMemorySheet({ open, onClose, onSaved, bookId = DEMO_BOOK_ID }: Props) {
+export default function NewMemorySheet({ open, onClose, onSaved, bookId }: Props) {
   const BOOK_ID = bookId
   const [text,     setText]     = useState('')
   const [saving,   setSaving]   = useState(false)

@@ -16,8 +16,6 @@ import MediaCard from '@/components/MediaCard'
 import BottomNav from '@/components/BottomNav'
 import NavSpacer from '@/components/NavSpacer'
 
-const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
-
 function mapMediaRow(r: Record<string, unknown>): MediaItem {
   return {
     id:           r.id as string,
@@ -47,7 +45,7 @@ function AlbumDetailInner() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [album,     setAlbum]     = useState<Album | null>(null)
-  const [bookId,    setBookId]     = useState(DEMO_BOOK_ID)
+  const [bookId,    setBookId]     = useState('')
   const [photos,    setPhotos]    = useState<MediaItem[]>([])
   const [editing,   setEditing]   = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -66,7 +64,7 @@ function AlbumDetailInner() {
         .order('datum_jahr',  { ascending: true, nullsFirst: false })
         .order('created_at',  { ascending: true }),
     ])
-    if (a) { setBookId(a.book_id ?? DEMO_BOOK_ID); setAlbum({ id: a.id, titel: a.titel, datumText: a.datum_text ?? undefined, datumJahr: a.datum_jahr ?? undefined, datumMonat: a.datum_monat ?? undefined, datumTag: a.datum_tag ?? undefined, coverUrl: a.cover_url ?? undefined, sortierung: a.sortierung ?? 0, photoCount: 0, previewUrls: [] }) }
+    if (a) { setBookId(a.book_id ?? ''); setAlbum({ id: a.id, titel: a.titel, datumText: a.datum_text ?? undefined, datumJahr: a.datum_jahr ?? undefined, datumMonat: a.datum_monat ?? undefined, datumTag: a.datum_tag ?? undefined, coverUrl: a.cover_url ?? undefined, sortierung: a.sortierung ?? 0, photoCount: 0, previewUrls: [] }) }
     if (m) setPhotos(m.map(mapMediaRow))
   }, [id])
 

@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase'
 import { Story } from '@/hooks/useStories'
 import { resizeImage } from '@/lib/resizeImage'
 
-const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
 interface Props {
   open:      boolean
@@ -30,7 +29,7 @@ function Label({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default function StoryEditSheet({ open, story, bookId = DEMO_BOOK_ID, onClose, onSaved, onDeleted }: Props) {
+export default function StoryEditSheet({ open, story, bookId, onClose, onSaved, onDeleted }: Props) {
   const BOOK_ID = bookId
   const isNew = !story?.id
 

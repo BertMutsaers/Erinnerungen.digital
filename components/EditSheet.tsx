@@ -15,7 +15,6 @@ interface Props {
   onDeleted: () => void
 }
 
-const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
 const KATEGORIEN = [
   { value: 'kindheit',    label: 'Kindheit & Jugend' },
@@ -68,7 +67,7 @@ function storagePathNew(bookId: string, memoryId: string) {
   return `${bookId}/${memoryId}_${Date.now()}.jpg`
 }
 
-export default function EditSheet({ memory, onClose, onSaved, onDeleted, bookId = DEMO_BOOK_ID }: Props) {
+export default function EditSheet({ memory, onClose, onSaved, onDeleted, bookId }: Props) {
   const BOOK_ID = bookId
   const [datum,        setDatum]        = useState('')
   const [titel,        setTitel]        = useState('')
@@ -187,7 +186,7 @@ export default function EditSheet({ memory, onClose, onSaved, onDeleted, bookId 
       let fotoUrl: string | null | undefined = undefined // undefined = no change
 
       // Upload new photo — unique path so browser doesn't cache old image
-      if (pendingBlob) {
+      if (pendingBlob && BOOK_ID) {
         const newPath = storagePathNew(BOOK_ID, memory.id)
         // Delete old photo first
         if (existingUrl) {
