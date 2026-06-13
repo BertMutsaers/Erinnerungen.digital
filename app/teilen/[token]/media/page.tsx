@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { usePublicProject, usePublicMedia, usePublicAlbums } from '@/hooks/usePublicData'
 import { MediaItem } from '@/hooks/useMedia'
 import MediaCard from '@/components/MediaCard'
@@ -15,6 +15,8 @@ import InvalidShareLink from '@/components/InvalidShareLink'
 
 export default function PublicMediaPage() {
   const { token } = useParams<{ token: string }>()
+  const searchParams  = useSearchParams()
+  const fromGalerie   = searchParams.get('ref') === 'galerie'
   const router    = useRouter()
   const project   = usePublicProject(token)
   const { items, loading }            = usePublicMedia(token)
@@ -94,7 +96,7 @@ export default function PublicMediaPage() {
       )}
 
       <NavSpacer />
-      <PublicBottomNav token={token} />
+      <PublicBottomNav token={token} showGalerieTab={fromGalerie} />
     </main>
   )
 }

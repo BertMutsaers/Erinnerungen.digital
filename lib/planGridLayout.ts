@@ -10,7 +10,7 @@ const HIGHLIGHT_KEYWORDS = [
 
 const COLOR_RULES: { color: CardColor; keywords: string[] }[] = [
   { color: 'schwarz', keywords: ['verstorben', 'gestorben', 'tod', 'verstirbt'] },
-  { color: 'gold',    keywords: ['geboren', 'geburt'] },
+  { color: 'gruen',   keywords: ['geboren', 'geburt'] },
   { color: 'rose',    keywords: ['geheiratet', 'hochzeit', 'heirat', 'verlobt'] },
 ]
 

@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 import { Memory } from './types'
 
 const SELECT_FIELDS = `
-  id, title, body, happened_at,
+  id, book_id, title, body, happened_at,
   datum_label, datum_jahr, datum_monat, datum_tag,
   location, card_size, card_color, groesse_manuell, foto_url, icon, kategorie, body_extra
 `
@@ -26,6 +26,7 @@ function mapRow(r: Record<string, unknown>): Memory {
     icon:           (r.icon as string)        ?? undefined,
     kategorie:      (r.kategorie as string)   ?? undefined,
     bodyExtra:      (r.body_extra as string)  ?? undefined,
+    bookId:         (r.book_id as string)     ?? undefined,
   }
 }
 

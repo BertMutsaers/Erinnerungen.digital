@@ -9,6 +9,7 @@ import type { User } from '@supabase/supabase-js'
 import Logo from '@/components/Logo'
 import ProjectEditSheet from '@/components/ProjectEditSheet'
 import OnboardingScreen from '@/components/OnboardingScreen'
+import type { GroupingMode } from '@/lib/phases'
 
 interface Project {
   id:                  string
@@ -18,6 +19,9 @@ interface Project {
   zuletzt_bearbeitet?: string
   share_token?:        string | null
   share_active?:       boolean
+  in_galerie?:          boolean
+  show_zeitgeschehen?:  boolean
+  groupingMode?:        GroupingMode
   vorname?:            string
   nachname?:           string
   firmenname?:         string
@@ -167,9 +171,13 @@ export default function DashboardClient({ user, projects: initialProjects, profi
     const { data: { user: u } } = await supabase.auth.getUser()
     if (!u) return
     const { data } = await supabase.from('projects')
-      .select('id, titel, typ, cover_url, zuletzt_bearbeitet, share_token, share_active, vorname, nachname, firmenname, geburtsdatum_text, geburtsort, sterbedatum_text, sterbeort')
+      .select('id, titel, typ, cover_url, zuletzt_bearbeitet, share_token, share_active, in_galerie, show_zeitgeschehen, vorname, nachname, firmenname, geburtsdatum_text, geburtsort, sterbedatum_text, sterbeort')
       .eq('user_id', u.id).order('zuletzt_bearbeitet', { ascending: false })
-    if (data) setProjects(data as Project[])
+    if (data) {
+      setProjects(data as Project[])
+      // Offenes Edit-Sheet mit frischen DB-Daten versorgen (z.B. in_galerie, share_active)
+      setEditingProject(prev => prev ? (data.find((p: Project) => p.id === prev.id) ?? prev) : null)
+    }
   }
 
   async function handleLogout() {
@@ -248,7 +256,12 @@ export default function DashboardClient({ user, projects: initialProjects, profi
                 key={p.id}
                 project={p}
                 onTap={() => router.push(`/projekte/${p.id}/zeitstrahl`)}
-                onLongPress={() => setEditingProject(p)}
+                onLongPress={() => {
+                  const saved = typeof window !== 'undefined'
+                    ? localStorage.getItem(`grouping-${p.id}`) as GroupingMode | null
+                    : null
+                  setEditingProject({ ...p, groupingMode: saved ?? 'none' })
+                }}
               />
             ))}
 
@@ -272,6 +285,9 @@ export default function DashboardClient({ user, projects: initialProjects, profi
           coverUrl:          editingProject.cover_url,
           shareToken:        editingProject.share_token,
           shareActive:       editingProject.share_active ?? false,
+          inGalerie:           editingProject.in_galerie          ?? false,
+          showZeitgeschehen:   editingProject.show_zeitgeschehen  ?? true,
+          groupingMode:        editingProject.groupingMode        ?? 'none',
           geburtsdatumText:  editingProject.geburtsdatum_text,
           sterbedatumText:   editingProject.sterbedatum_text,
         } : null}

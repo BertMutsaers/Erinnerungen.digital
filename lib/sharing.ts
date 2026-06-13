@@ -34,13 +34,15 @@ export async function createShareToken(projectId: string): Promise<string> {
   if (!user) throw new Error('Nicht eingeloggt')
 
   const token = generateToken()
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('projects')
     .update({ share_token: token, shared_at: new Date().toISOString() })
     .eq('id', projectId)
-    .eq('user_id', user.id) // RLS guard: only owner can update
+    .eq('user_id', user.id)
+    .select('id')
 
   if (error) throw new Error(error.message)
+  if (!updated || updated.length === 0) throw new Error('Projekt nicht gefunden oder kein Zugriff')
   return token
 }
 
@@ -91,13 +93,15 @@ export async function enableSharing(projectId: string): Promise<string> {
 
   const token = existing?.share_token ?? generateToken()
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('projects')
     .update({ share_token: token, share_active: true, shared_at: new Date().toISOString() })
     .eq('id', projectId)
     .eq('user_id', user.id)
+    .select('id')
 
   if (error) throw new Error(error.message)
+  if (!updated || updated.length === 0) throw new Error('Projekt nicht gefunden oder kein Zugriff')
   return token
 }
 
@@ -111,13 +115,15 @@ export async function disableSharing(projectId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Nicht eingeloggt')
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('projects')
     .update({ share_active: false })
     .eq('id', projectId)
     .eq('user_id', user.id)
+    .select('id')
 
   if (error) throw new Error(error.message)
+  if (!updated || updated.length === 0) throw new Error('Projekt nicht gefunden oder kein Zugriff')
 }
 
 /**

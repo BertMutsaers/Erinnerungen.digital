@@ -6,6 +6,7 @@ import { Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { fetchMemoryById, fetchAdjacentMemories } from '@/lib/queries'
+import { supabase } from '@/lib/supabase'
 import { Memory, CardColor } from '@/lib/types'
 import { resolveCardColor } from '@/lib/planGridLayout'
 import EditSheet from '@/components/EditSheet'
@@ -27,6 +28,7 @@ const COLOR_BG: Record<CardColor, string> = {
   gold:    '#F5F0E8',
   rose:    '#FDF0F0',
   blau:    '#F0F4FF',
+  gruen:   '#EFF6EE',
   weiss:   '#F2F2F7',
 }
 
@@ -35,6 +37,7 @@ const COLOR_ACCENT: Record<CardColor, string> = {
   gold:    '#8B6914',
   rose:    '#9B4D4D',
   blau:    '#2A4080',
+  gruen:   '#2D6A2F',
   weiss:   '#111111',
 }
 
@@ -60,10 +63,11 @@ function MemoryDetailInner() {
   const fromPath     = searchParams.get('from') ? decodeURIComponent(searchParams.get('from')!) : null
   const basePath     = fromPath ? fromPath.replace('/zeitstrahl', '') : ''
 
-  const [memory,   setMemory]   = useState<Memory | null>(null)
-  const [adjacent, setAdjacent] = useState<{ prev: Memory | null; next: Memory | null }>({ prev: null, next: null })
-  const [loading,  setLoading]  = useState(true)
-  const [editing,  setEditing]  = useState(false)
+  const [memory,              setMemory]              = useState<Memory | null>(null)
+  const [adjacent,            setAdjacent]            = useState<{ prev: Memory | null; next: Memory | null }>({ prev: null, next: null })
+  const [loading,             setLoading]             = useState(true)
+  const [editing,             setEditing]             = useState(false)
+  const [showZeitgeschehen,   setShowZeitgeschehen]   = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -73,6 +77,15 @@ function MemoryDetailInner() {
     ])
     setMemory(mem)
     setAdjacent(adj)
+    // Projekt-Einstellung für Zeitgeschehen-Anzeige laden
+    if (mem?.bookId) {
+      const { data } = await supabase
+        .from('projects')
+        .select('show_zeitgeschehen')
+        .eq('id', mem.bookId)
+        .single()
+      if (data) setShowZeitgeschehen(data.show_zeitgeschehen ?? true)
+    }
     setLoading(false)
   }, [id])
 
@@ -195,7 +208,7 @@ function MemoryDetailInner() {
             )}
 
             {/* Zeitgeschehen box */}
-            {memory.bodyExtra?.trim() && (
+            {showZeitgeschehen && memory.bodyExtra?.trim() && (
               <div
                 className="mt-7 rounded-[14px]"
                 style={{ backgroundColor: '#F5F5F5', padding: '16px 18px' }}

@@ -33,6 +33,7 @@ const COLOR_TOKENS: Record<CardColor, ColorTokens> = {
   gold:    { bg: '#F5F0E8', titleColor: '#8B6914', metaColor: '#A0845C', photoBg: '#EDE5D0' },
   rose:    { bg: '#FDF0F0', titleColor: '#9B4D4D', metaColor: '#B87070', photoBg: '#F5E0E0' },
   blau:    { bg: '#F0F4FF', titleColor: '#2A4080', metaColor: '#6B82B8', photoBg: '#DDE5FF' },
+  gruen:   { bg: '#EFF6EE', titleColor: '#2D6A2F', metaColor: '#5A9B5C', photoBg: '#D6EDD5' },
   weiss:   { bg: '#FFFFFF', titleColor: '#111111', metaColor: '#9B9B9B', photoBg: '#E8E8E8' },
 }
 

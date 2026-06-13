@@ -1,5 +1,5 @@
 export type CardSize  = 'small' | 'medium' | 'large' | 'lg-black'
-export type CardColor = 'schwarz' | 'gold' | 'rose' | 'blau' | 'weiss'
+export type CardColor = 'schwarz' | 'gold' | 'rose' | 'blau' | 'weiss' | 'gruen'
 
 export interface Memory {
   id: string
@@ -16,6 +16,7 @@ export interface Memory {
   pinnedSize?:     CardSize  // raw DB card_size value
   groesseManuell?: boolean  // true = user set this size intentionally in EditSheet
   bodyExtra?:      string   // KI-generated zeitgeschehen context
+  bookId?:         string   // parent project/book id
   imageUrl?: string
   icon?: string
   kategorie?: string

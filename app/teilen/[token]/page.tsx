@@ -1,6 +1,6 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { usePublicProject, usePublicMemories, projectYears } from '@/hooks/usePublicData'
 import PolaroidIntro from '@/components/PolaroidIntro'
 import MemoryCard from '@/components/MemoryCard'
@@ -10,8 +10,10 @@ import ShareBanner from '@/components/ShareBanner'
 import InvalidShareLink from '@/components/InvalidShareLink'
 
 export default function PublicZeitstrahlPage() {
-  const { token } = useParams<{ token: string }>()
-  const router     = useRouter()
+  const { token }  = useParams<{ token: string }>()
+  const router      = useRouter()
+  const searchParams = useSearchParams()
+  const fromGalerie  = searchParams.get('ref') === 'galerie'
   const project    = usePublicProject(token)
   const { memories, loading } = usePublicMemories(token)
 
@@ -67,7 +69,7 @@ export default function PublicZeitstrahlPage() {
       </main>
 
       <NavSpacer />
-      <PublicBottomNav token={token} />
+      <PublicBottomNav token={token} showGalerieTab={fromGalerie} />
     </div>
   )
 }

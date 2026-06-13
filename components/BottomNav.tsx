@@ -22,10 +22,10 @@ export default function BottomNav({ basePath = '', zeitstrahlSuffix = '/zeitstra
   const pathname = usePathname()
 
   const TABS = [
+    { href: '/dashboard',                     icon: null,  label: 'Dashboard'  },
     { href: `${basePath}${zeitstrahlSuffix}`, icon: '⏱', label: 'Zeitstrahl'  },
     { href: `${basePath}/geschichten`,        icon: '📖', label: 'Geschichten' },
     { href: `${basePath}/media`,              icon: '🎬', label: 'Media'       },
-    { href: '/dashboard',                     icon: null,  label: 'Dashboard'  },
   ]
 
   return (

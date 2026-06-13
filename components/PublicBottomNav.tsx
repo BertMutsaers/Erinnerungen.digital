@@ -3,16 +3,18 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-interface Props { token: string }
+interface Props { token: string; showGalerieTab?: boolean }
 
-export default function PublicBottomNav({ token }: Props) {
+export default function PublicBottomNav({ token, showGalerieTab }: Props) {
   const pathname = usePathname()
-  const base = `/teilen/${token}`
+  const base  = `/teilen/${token}`
+  const ref   = showGalerieTab ? '?ref=galerie' : ''
 
   const TABS = [
-    { href: base,                  icon: '⏱', label: 'Zeitstrahl'  },
-    { href: `${base}/geschichten`, icon: '📖', label: 'Geschichten' },
-    { href: `${base}/media`,       icon: '🎬', label: 'Media'       },
+    ...(showGalerieTab ? [{ href: '/galerie', icon: '🖼', label: 'Galerie' }] : []),
+    { href: `${base}${ref}`,                  icon: '⏱', label: 'Zeitstrahl'  },
+    { href: `${base}/geschichten${ref}`,       icon: '📖', label: 'Geschichten' },
+    { href: `${base}/media${ref}`,             icon: '🎬', label: 'Media'       },
   ]
 
   return (

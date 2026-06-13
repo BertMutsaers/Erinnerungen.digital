@@ -24,6 +24,10 @@ export default async function HomePage() {
       }}>
         <Logo variant="symbol" height={32} />
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <Link href="/galerie"
+            style={{ padding: '9px 22px', borderRadius: 100, fontSize: 14, fontWeight: 500, color: '#555', textDecoration: 'none' }}>
+            Galerie
+          </Link>
           <Link href="/auth"
             style={{ padding: '9px 22px', borderRadius: 100, border: '1.5px solid rgba(0,0,0,0.18)', fontSize: 14, fontWeight: 500, color: '#000', textDecoration: 'none' }}>
             Anmelden
@@ -183,7 +187,34 @@ export default async function HomePage() {
         </p>
       </section>
 
-      {/* ── SECTION 5: CTA ─────────────────────────────────────────── */}
+      {/* ── SECTION 5: Galerie-Teaser ──────────────────────────────── */}
+      <section style={{ padding: '100px 24px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          <h2 className="font-serif" style={{ fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.15, marginBottom: 16 }}>
+            Geschichten, die geteilt werden.
+          </h2>
+          <p style={{ fontSize: 17, color: '#707070', lineHeight: 1.7, marginBottom: 40 }}>
+            Manche Erinnerungsbücher sind für alle da — von Familien, die ihre Geschichte
+            der Welt zeigen möchten. Entdecke öffentlich geteilte Erinnerungsbücher in unserer Galerie.
+          </p>
+          <Link
+            href="/galerie"
+            style={{
+              display:        'inline-flex', alignItems: 'center', gap: 10,
+              padding:        '16px 36px',
+              borderRadius:   100,
+              border:         '1.5px solid rgba(0,0,0,0.15)',
+              color:          '#000',
+              fontSize:       15, fontWeight: 500,
+              textDecoration: 'none',
+            }}
+          >
+            Zur öffentlichen Galerie →
+          </Link>
+        </div>
+      </section>
+
+      {/* ── SECTION 6: CTA ─────────────────────────────────────────── */}
       <section style={{ padding: '120px 24px', background: '#000', textAlign: 'center' }}>
         <h2 className="font-serif" style={{
           fontSize:   'clamp(28px, 5vw, 52px)',

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
-import { usePublicMemories } from '@/hooks/usePublicData'
+import { usePublicMemories, usePublicProject } from '@/hooks/usePublicData'
 import NavSpacer from '@/components/NavSpacer'
 import InvalidShareLink from '@/components/InvalidShareLink'
 
@@ -16,6 +16,7 @@ export default function PublicMemoryDetailPage() {
   const { token, id } = useParams<{ token: string; id: string }>()
   const router        = useRouter()
   const { memories, loading } = usePublicMemories(token)
+  const project = usePublicProject(token)
 
   if (!loading && memories.length === 0) return <InvalidShareLink />
 
@@ -80,7 +81,7 @@ export default function PublicMemoryDetailPage() {
             ) : (
               <p style={{ fontSize: 17, color: '#C0C0C0', fontStyle: 'italic' }}>Noch keine Beschreibung vorhanden.</p>
             )}
-            {memory.bodyExtra?.trim() && (
+            {(project === null || project === 'not-found' || project?.show_zeitgeschehen !== false) && memory.bodyExtra?.trim() && (
               <div className="mt-7 rounded-[14px]" style={{ backgroundColor: '#F5F5F5', padding: '16px 18px' }}>
                 <p className="font-sans text-[10px] uppercase tracking-widest mb-2" style={{ color: '#9B9B9B' }}>🌍 Zeitgeschehen</p>
                 <p style={{ fontSize: 14, lineHeight: 1.6, color: '#3C3C3E' }}>{memory.bodyExtra}</p>

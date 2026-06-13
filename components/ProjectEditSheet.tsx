@@ -3,8 +3,15 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
+import type { GroupingMode } from '@/lib/phases'
 import { resizeProfileImage } from '@/lib/resizeImage'
 import { parseDateText } from '@/lib/parseDate'
+
+const GROUPING_OPTIONS: { value: GroupingMode; label: string }[] = [
+  { value: 'phase',  label: 'Lebensphase' },
+  { value: 'decade', label: 'Jahrzehnt' },
+  { value: 'none',   label: 'Keine' },
+]
 
 interface Project {
   id:           string
@@ -14,6 +21,9 @@ interface Project {
   coverUrl?:    string
   shareToken?:  string | null   // persisted token (kept even when inactive)
   shareActive?: boolean         // whether sharing is currently on
+  inGalerie?:          boolean
+  showZeitgeschehen?:  boolean
+  groupingMode?:       GroupingMode
   geburtsdatumText?: string
   geburtsort?:       string
   sterbedatumText?:  string
@@ -61,7 +71,16 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted,
   const [shareActive,     setShareActive]     = useState(false)
   const [shareToken,      setShareToken]      = useState<string | null>(null)
   const [shareLoading,    setShareLoading]    = useState(false)
+  const [shareError,      setShareError]      = useState<string | null>(null)
   const [copiedLink,      setCopiedLink]      = useState(false)
+
+  // ── Galerie state ──────────────────────────────────────────────────────────
+  const [inGalerie,          setInGalerie]          = useState(false)
+  const [galerieLoading,     setGalerieLoading]     = useState(false)
+  const [galerieError,       setGalerieError]       = useState<string | null>(null)
+  const [showZeitgeschehen,  setShowZeitgeschehen]  = useState(true)
+  const [zeitLoading,        setZeitLoading]        = useState(false)
+  const [groupingMode,       setGroupingMode]       = useState<GroupingMode>('none')
 
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -78,6 +97,14 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted,
     setConfirmDelete(false)
     setShareActive(project.shareActive ?? false)
     setShareToken(project.shareToken ?? null)
+    setShareLoading(false)
+    setShareError(null)
+    setInGalerie(project.inGalerie ?? false)
+    setGalerieLoading(false)
+    setGalerieError(null)
+    setShowZeitgeschehen(project.showZeitgeschehen ?? true)
+    setZeitLoading(false)
+    setGroupingMode(project.groupingMode ?? 'none')
   }, [project])
 
   useEffect(() => {
@@ -175,7 +202,9 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted,
 
   async function handleToggleShare(on: boolean) {
     if (!project) return
-    setShareActive(on)          // optimistic
+    setShareActive(on)
+    setShareError(null)
+    if (!on) setInGalerie(false)
     setShareLoading(true)
     try {
       const res = await fetch('/api/share', {
@@ -184,12 +213,62 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted,
         body: JSON.stringify({ projectId: project.id, action: on ? 'enable' : 'disable' }),
       })
       const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
       if (on && json.token) setShareToken(json.token)
       onShareChanged?.()
-    } catch {
-      setShareActive(!on)       // revert on error
+    } catch (err: unknown) {
+      setShareActive(!on)
+      if (!on) setInGalerie(project.inGalerie ?? false)
+      const msg = (err && typeof err === 'object' && 'message' in err)
+        ? String((err as { message: unknown }).message)
+        : String(err)
+      setShareError(msg)
     } finally {
       setShareLoading(false)
+    }
+  }
+
+  async function handleToggleGalerie(on: boolean) {
+    if (!project) return
+    setInGalerie(on)
+    setGalerieError(null)
+    setGalerieLoading(true)
+    try {
+      const { data: updated, error } = await supabase
+        .from('projects')
+        .update({ in_galerie: on })
+        .eq('id', project.id)
+        .select('id')
+      if (error) throw error
+      if (!updated || updated.length === 0) throw new Error('Speichern fehlgeschlagen — kein Zugriff auf dieses Projekt')
+      onShareChanged?.()
+    } catch (err: unknown) {
+      setInGalerie(!on)
+      const msg = (err && typeof err === 'object' && 'message' in err)
+        ? String((err as { message: unknown }).message)
+        : String(err)
+      setGalerieError(msg)
+    } finally {
+      setGalerieLoading(false)
+    }
+  }
+
+  async function handleToggleZeitgeschehen(on: boolean) {
+    if (!project) return
+    setShowZeitgeschehen(on)
+    setZeitLoading(true)
+    try {
+      const { data: updated, error } = await supabase
+        .from('projects')
+        .update({ show_zeitgeschehen: on })
+        .eq('id', project.id)
+        .select('id')
+      if (error) throw error
+      if (!updated || updated.length === 0) throw new Error('Kein Zugriff')
+    } catch {
+      setShowZeitgeschehen(!on)
+    } finally {
+      setZeitLoading(false)
     }
   }
 
@@ -344,6 +423,12 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted,
                 : 'Nur wer den Link hat, kann das Erinnerungsbuch ansehen — niemand sonst.'}
             </p>
 
+            {shareError && (
+              <p className="font-sans text-[12px] mt-1" style={{ color: '#C0392B' }}>
+                {shareError}
+              </p>
+            )}
+
             {/* Privacy notice — only shown the first time (when no token exists yet) */}
             {!shareToken && shareActive && (
               <p className="font-sans text-[11px] mt-2 leading-relaxed" style={{ color: '#B0B0B0' }}>
@@ -360,6 +445,114 @@ export default function ProjectEditSheet({ project, onClose, onSaved, onDeleted,
                 {copiedLink ? '✓ Kopiert' : 'Link kopieren'}
               </button>
             )}
+
+            {/* ── Galerie-Toggle — nur sichtbar wenn share aktiv ──────── */}
+            {shareActive && (
+              <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+
+                {/* Toggle row */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <span className="font-sans text-[15px] text-gray-900 leading-snug">
+                      In öffentlicher Galerie zeigen
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={inGalerie}
+                    disabled={galerieLoading}
+                    onClick={() => handleToggleGalerie(!inGalerie)}
+                    className="flex-shrink-0 relative rounded-full transition-colors duration-200 disabled:opacity-50"
+                    style={{
+                      width: 51, height: 31,
+                      background: inGalerie ? '#111111' : '#E5E5EA',
+                    }}>
+                    <span
+                      className="absolute rounded-full bg-white shadow transition-transform duration-200"
+                      style={{
+                        top: 2, left: 2,
+                        width: 27, height: 27,
+                        transform: inGalerie ? 'translateX(20px)' : 'translateX(0)',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+                      }}
+                    />
+                  </button>
+                </div>
+
+                {/* Hint text */}
+                <p className="font-sans text-[12px] mt-2 leading-relaxed" style={{ color: '#9B9B9B' }}>
+                  {inGalerie
+                    ? 'Für alle Besucher auf erinnerungen.digital sichtbar.'
+                    : 'Für alle Besucher auf erinnerungen.digital sichtbar machen.'}
+                </p>
+
+                {galerieError && (
+                  <p className="font-sans text-[12px] mt-1" style={{ color: '#C0392B' }}>
+                    {galerieError}
+                  </p>
+                )}
+
+              </div>
+            )}
+          </div>
+
+          {/* ── Aktionen ─────────────────────────────────────────────── */}
+          <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 20 }}>
+            <label className="block text-[10px] uppercase tracking-widest text-gray-400 mb-3 font-sans">
+              Aktionen
+            </label>
+
+            {/* Zeitgeschehen-Toggle */}
+            <div className="flex items-center justify-between gap-4 mb-1">
+              <span className="font-sans text-[15px] text-gray-900">Zeitgeschehen anzeigen</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showZeitgeschehen}
+                disabled={zeitLoading}
+                onClick={() => handleToggleZeitgeschehen(!showZeitgeschehen)}
+                className="flex-shrink-0 relative rounded-full transition-colors duration-200 disabled:opacity-50"
+                style={{ width: 51, height: 31, background: showZeitgeschehen ? '#111111' : '#E5E5EA' }}
+              >
+                <span
+                  className="absolute rounded-full bg-white shadow transition-transform duration-200"
+                  style={{ top: 2, left: 2, width: 27, height: 27,
+                    transform: showZeitgeschehen ? 'translateX(20px)' : 'translateX(0)',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }}
+                />
+              </button>
+            </div>
+            <p className="font-sans text-[12px] mb-5" style={{ color: '#9B9B9B' }}>
+              {showZeitgeschehen
+                ? 'Historischer Kontext wird in Ereignissen angezeigt.'
+                : 'Historischer Kontext ist ausgeblendet — Daten bleiben erhalten.'}
+            </p>
+
+            {/* Zeitstrahl-Gruppierung */}
+            <p className="font-sans text-[15px] text-gray-900 mb-2">Zeitstrahl gruppieren nach</p>
+            <div className="flex rounded-[10px] p-1" style={{ background: '#F2F2F7' }}>
+              {GROUPING_OPTIONS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setGroupingMode(value)
+                    try { localStorage.setItem(`grouping-${project.id}`, value) } catch { /* ignore */ }
+                  }}
+                  className="flex-1 py-1.5 rounded-[8px] font-sans text-[13px] transition-all"
+                  style={{
+                    background: groupingMode === value ? '#fff' : 'transparent',
+                    color:      groupingMode === value ? '#111' : '#8E8E93',
+                    fontWeight: groupingMode === value ? 600 : 400,
+                    boxShadow:  groupingMode === value ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
           </div>
 
           {/* Delete */}

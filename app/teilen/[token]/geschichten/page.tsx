@@ -1,6 +1,6 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { usePublicProject, usePublicStories } from '@/hooks/usePublicData'
 import StoryCard from '@/components/StoryCard'
 import PublicBottomNav from '@/components/PublicBottomNav'
@@ -10,6 +10,8 @@ import InvalidShareLink from '@/components/InvalidShareLink'
 
 export default function PublicGeschichtenPage() {
   const { token } = useParams<{ token: string }>()
+  const searchParams  = useSearchParams()
+  const fromGalerie   = searchParams.get('ref') === 'galerie'
   const router    = useRouter()
   const project   = usePublicProject(token)
   const { stories, loading } = usePublicStories(token)
@@ -51,7 +53,7 @@ export default function PublicGeschichtenPage() {
 
       <div className="px-4"><ShareBanner /></div>
       <NavSpacer />
-      <PublicBottomNav token={token} />
+      <PublicBottomNav token={token} showGalerieTab={fromGalerie} />
     </main>
   )
 }

@@ -32,6 +32,8 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/demo') ||
     // Public share links
     path.startsWith('/teilen') ||
+    // Public gallery
+    path.startsWith('/galerie') ||
     // Legacy demo project route
     path.startsWith('/projekte/c0000000')
 

@@ -29,6 +29,7 @@ export interface PublicProject {
   sterbedatum_text?:   string
   geburtsort?:         string
   sterbeort?:          string
+  show_zeitgeschehen?: boolean
 }
 
 // ── Row mappers ────────────────────────────────────────────────────────────────

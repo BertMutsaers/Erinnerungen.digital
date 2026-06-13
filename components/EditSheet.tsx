@@ -34,6 +34,7 @@ const COLORS: { value: CardColor; bg: string; border: string; activeBorder: stri
   { value: 'gold',    bg: '#F5F0E8', border: 'rgba(0,0,0,0.10)', activeBorder: '#000' },
   { value: 'rose',    bg: '#FDF0F0', border: 'rgba(0,0,0,0.10)', activeBorder: '#000' },
   { value: 'blau',    bg: '#F0F4FF', border: 'rgba(0,0,0,0.10)', activeBorder: '#000' },
+  { value: 'gruen',   bg: '#EFF6EE', border: 'rgba(0,0,0,0.10)', activeBorder: '#000' },
   { value: 'schwarz', bg: '#1C1C1E', border: 'rgba(255,255,255,0.15)', activeBorder: '#666' },
 ]
 

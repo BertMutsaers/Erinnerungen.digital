@@ -17,6 +17,8 @@ import NavSpacer from './NavSpacer'
 import PolaroidIntro from './PolaroidIntro'
 import type { ExtractResult } from '@/app/api/extract-rohtext/route'
 import KiReviewScreen from './KiReviewScreen'
+import ProjectEditSheet from './ProjectEditSheet'
+import { supabase } from '@/lib/supabase'
 
 const DEMO_BOOK_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
 
@@ -38,12 +40,6 @@ function formatLifespan(p: Person): string {
 
 interface Props { bookId?: string; basePath?: string; readOnly?: boolean }
 
-const GROUPING_LABELS: Record<GroupingMode, string> = {
-  phase:  'Lebensphase (KI)',
-  decade: 'Jahrzehnt',
-  none:   'Keine Gruppierung',
-}
-
 export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', readOnly = false }: Props) {
   const BOOK_ID = bookId
   const router = useRouter()
@@ -53,10 +49,11 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
   const [localCoverUrl,setLocalCoverUrl]= useState<string | null>(null)
   const [newMemoryOpen,setNewMemoryOpen]= useState(false)
   const [groupingMode, setGroupingMode] = useState<GroupingMode>('phase')
-  const [showGrouping, setShowGrouping] = useState(false)
   const [kiLoading,    setKiLoading]    = useState(false)
   const [kiResult,     setKiResult]     = useState<ExtractResult | null>(null)
   const [kiError,      setKiError]      = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [editingProject, setEditingProject] = useState<Record<string, any> | null>(null)
 
   const lsKey = `grouping-${BOOK_ID}`
 
@@ -72,8 +69,30 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
   function saveGrouping(mode: GroupingMode) {
     setGroupingMode(mode)
     setFilter('alle')
-    setShowGrouping(false)
     try { localStorage.setItem(lsKey, mode) } catch { /* ignore */ }
+  }
+
+  async function openSettings() {
+    const { data } = await supabase
+      .from('projects')
+      .select('id, titel, vorname, nachname, cover_url, share_token, share_active, in_galerie, show_zeitgeschehen, geburtsdatum_text, geburtsort, sterbedatum_text, sterbeort')
+      .eq('id', BOOK_ID)
+      .single()
+    if (!data) return
+    const saved = typeof window !== 'undefined'
+      ? localStorage.getItem(`grouping-${BOOK_ID}`) as GroupingMode | null
+      : null
+    setEditingProject({
+      ...data,
+      coverUrl:         data.cover_url,
+      shareToken:       data.share_token,
+      shareActive:      data.share_active   ?? false,
+      inGalerie:        data.in_galerie     ?? false,
+      showZeitgeschehen:data.show_zeitgeschehen ?? true,
+      groupingMode:     saved ?? 'none',
+      geburtsdatumText: data.geburtsdatum_text,
+      sterbedatumText:  data.sterbedatum_text,
+    })
   }
 
   const { person, reload: reloadPerson }    = usePerson(BOOK_ID)
@@ -152,72 +171,46 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
       />
 
       {/* ── Header ──────────────────────────────────────────────────── */}
-      <header className="px-4 pt-10 pb-3">
-        <h1 className="font-serif text-[30px] font-bold leading-tight text-gray-900">
-          {person?.title ?? ''}
-        </h1>
-        {person && (
-          <p className="font-sans text-[13px] text-gray-400 mt-0.5">
-            {formatLifespan(person)}
-          </p>
+      <header className="px-4 pt-10 pb-3 flex items-start justify-between gap-3">
+        <div className="flex-1">
+          <h1 className="font-serif text-[30px] font-bold leading-tight text-gray-900">
+            {person?.title ?? ''}
+          </h1>
+          {person && (
+            <p className="font-sans text-[13px] text-gray-400 mt-0.5">
+              {formatLifespan(person)}
+            </p>
+          )}
+        </div>
+        {!readOnly && (
+          <button
+            onClick={openSettings}
+            className="mt-2 flex-shrink-0 w-9 h-9 rounded-full bg-white flex items-center justify-center active:opacity-60"
+            style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.10)' }}
+            aria-label="Einstellungen"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3C3C3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
         )}
       </header>
 
-      {/* ── Filter chips + ⚙️ grouping button ─────────────────────────── */}
-      {!loading && (
-        <div className="flex items-center gap-2 px-4 pb-4">
-          {/* Chips (scrollable) */}
-          {activeChips.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto flex-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              {activeChips.map((chip) => {
-                const selected = filter === chip.key
-                return (
-                  <button key={chip.key} onClick={() => setFilter(chip.key)}
-                    className={`flex-shrink-0 px-4 py-1.5 rounded-full text-[13px] font-sans font-medium transition-colors
-                      ${selected ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
-                    {chip.label}
-                  </button>
-                )
-              })}
-            </div>
-          )}
-          {/* ⚙️ Grouping button */}
-          <button
-            onClick={() => setShowGrouping(true)}
-            className="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 active:opacity-60"
-            title="Gruppierung ändern"
-          >
-            <span style={{ fontSize: 14 }}>⚙️</span>
-          </button>
+      {/* ── Filter chips ─────────────────────────────────────────────── */}
+      {!loading && activeChips.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto px-4 pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {activeChips.map((chip) => {
+            const selected = filter === chip.key
+            return (
+              <button key={chip.key} onClick={() => setFilter(chip.key)}
+                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-[13px] font-sans font-medium transition-colors
+                  ${selected ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
+                {chip.label}
+              </button>
+            )
+          })}
         </div>
-      )}
-
-      {/* ── Grouping settings sheet ───────────────────────────────────── */}
-      {showGrouping && (
-        <>
-          <div className="fixed inset-0 bg-black/30 z-50 backdrop-blur-sm" onClick={() => setShowGrouping(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-[430px] bg-white rounded-t-3xl shadow-2xl pb-8">
-            <div className="flex justify-center pt-3 pb-4">
-              <div className="w-10 h-1 rounded-full bg-gray-200" />
-            </div>
-            <p className="font-sans text-[13px] font-semibold text-gray-400 text-center mb-4 uppercase tracking-widest px-5">
-              Ansicht gruppieren nach
-            </p>
-            <div className="flex flex-col px-5 gap-1">
-              {(['phase', 'decade', 'none'] as GroupingMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => saveGrouping(mode)}
-                  className="flex items-center justify-between px-4 py-3.5 rounded-[14px] active:bg-gray-50 transition-colors"
-                  style={{ background: groupingMode === mode ? '#F2F2F7' : 'transparent' }}
-                >
-                  <span className="font-sans text-[16px] text-gray-900">{GROUPING_LABELS[mode]}</span>
-                  {groupingMode === mode && <span className="text-[18px]">✓</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
       )}
 
       {/* ── Content ──────────────────────────────────────────────────── */}
@@ -293,18 +286,6 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
         </div>
       )}
 
-      {/* Zeitgeschehen link at bottom of timeline */}
-      {!loading && phases.length > 0 && (
-        <div className="py-5 text-center">
-          <Link
-            href="/eingabe"
-            className="font-sans text-[13px] active:opacity-60"
-            style={{ color: '#707070' }}
-          >
-            🔄 Zeitgeschehen für alle Einträge ergänzen
-          </Link>
-        </div>
-      )}
 
       {/* Floating ⊕ button — hidden in readOnly mode */}
       {!readOnly && (
@@ -350,6 +331,14 @@ export default function TimelineScreen({ bookId = DEMO_BOOK_ID, basePath = '', r
       <BottomNav
         basePath={basePath}
         zeitstrahlSuffix={basePath === '/demo' ? '' : '/zeitstrahl'}
+      />
+
+      <ProjectEditSheet
+        project={editingProject as Parameters<typeof ProjectEditSheet>[0]['project']}
+        onClose={() => setEditingProject(null)}
+        onSaved={() => { setEditingProject(null); reloadPerson(); reload() }}
+        onDeleted={() => { setEditingProject(null); router.replace('/dashboard') }}
+        onShareChanged={() => {}}
       />
     </main>
   )
